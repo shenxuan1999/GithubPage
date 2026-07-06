@@ -1,0 +1,1018 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Base64 转图片</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #050505;
+      --panel: #111317;
+      --panel-soft: #171a20;
+      --text: #f5f7fb;
+      --muted: #9aa4b2;
+      --muted-strong: #c9d1dc;
+      --border: rgba(255, 255, 255, 0.12);
+      --border-strong: rgba(255, 255, 255, 0.24);
+      --primary: #2f7df6;
+      --success: #2dd4bf;
+      --danger: #fb7185;
+      --warning: #f59e0b;
+      --shadow: 0 28px 80px rgba(0, 0, 0, 0.44);
+      --mono: Consolas, "SFMono-Regular", "Liberation Mono", Menlo, monospace;
+      --sans: Inter, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 260px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        var(--bg);
+      background-size: auto, 80px 80px, 80px 80px, auto;
+      color: var(--text);
+      font-family: var(--sans);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(120deg, rgba(47, 125, 246, 0.16), transparent 30%, transparent 72%, rgba(45, 212, 191, 0.12)),
+        linear-gradient(180deg, transparent, rgba(5, 5, 5, 0.86) 78%);
+      z-index: -1;
+    }
+
+    button,
+    textarea,
+    input {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .app {
+      width: min(1480px, calc(100vw - 40px));
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 22px 0 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 0 2px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .mark {
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04)),
+        #090a0c;
+      color: #ffffff;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+      flex: 0 0 auto;
+    }
+
+    .mark svg {
+      width: 25px;
+      height: 25px;
+      stroke-width: 2.1;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 36px;
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .button {
+      min-height: 38px;
+      border-radius: 8px;
+      padding: 0 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+      white-space: nowrap;
+    }
+
+    .button:hover,
+    .button:focus-visible {
+      border-color: var(--border-strong);
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    .button.primary {
+      color: #050505;
+      background: #ffffff;
+      border-color: #ffffff;
+      font-weight: 700;
+    }
+
+    .button.primary:hover,
+    .button.primary:focus-visible {
+      background: #eef3ff;
+      border-color: #eef3ff;
+    }
+
+    .button svg {
+      width: 17px;
+      height: 17px;
+      stroke-width: 2.2;
+      flex: 0 0 auto;
+    }
+
+    .status-strip {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) repeat(4, auto);
+      align-items: center;
+      gap: 10px;
+      padding: 13px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035)),
+        rgba(17, 19, 23, 0.86);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .status-main {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--warning);
+      box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.13);
+      flex: 0 0 auto;
+    }
+
+    .status-strip.valid .status-dot {
+      background: var(--success);
+      box-shadow: 0 0 0 4px rgba(45, 212, 191, 0.14), 0 0 18px rgba(45, 212, 191, 0.58);
+    }
+
+    .status-strip.invalid .status-dot {
+      background: var(--danger);
+      box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.14), 0 0 18px rgba(251, 113, 133, 0.34);
+    }
+
+    .status-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .metric {
+      min-height: 30px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.055);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .workspace {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(420px, 0.88fr);
+      gap: 18px;
+    }
+
+    .pane {
+      min-height: 540px;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035)),
+        var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .pane-head {
+      height: 58px;
+      padding: 0 14px 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.045);
+    }
+
+    .pane-title {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-weight: 700;
+      color: var(--muted-strong);
+    }
+
+    .pane-title svg {
+      width: 18px;
+      height: 18px;
+      color: var(--success);
+      flex: 0 0 auto;
+    }
+
+    .pane-tools {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+
+    .icon-button {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid transparent;
+      transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+    }
+
+    .icon-button:hover,
+    .icon-button:focus-visible {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--border-strong);
+      color: var(--text);
+      outline: none;
+    }
+
+    .icon-button svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2.1;
+    }
+
+    .editor-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      background: #080b10;
+    }
+
+    .editor-shell {
+      height: 100%;
+      min-height: 480px;
+      display: grid;
+      grid-template-columns: 56px minmax(0, 1fr);
+      background: #080b10;
+    }
+
+    .line-gutter {
+      margin: 0;
+      padding: 18px 10px 18px 0;
+      overflow: hidden;
+      color: rgba(154, 164, 178, 0.62);
+      background: #07090d;
+      border-right: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.68;
+      text-align: right;
+      user-select: none;
+      white-space: pre;
+    }
+
+    textarea {
+      width: 100%;
+      height: 100%;
+      min-height: 480px;
+      padding: 18px;
+      resize: none;
+      outline: none;
+      border: 0;
+      display: block;
+      color: #e9eef8;
+      background: #080b10;
+      caret-color: var(--success);
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.68;
+      tab-size: 2;
+      letter-spacing: 0;
+      overflow: auto;
+      white-space: pre;
+    }
+
+    textarea::placeholder {
+      color: rgba(154, 164, 178, 0.72);
+    }
+
+    .preview-wrap {
+      flex: 1;
+      min-height: 0;
+      padding: 16px;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto;
+      gap: 14px;
+      background: #080b10;
+    }
+
+    .preview-stage {
+      min-height: 360px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      overflow: auto;
+      background:
+        linear-gradient(45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.05) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.05) 75%),
+        #0b0f15;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+      background-size: 20px 20px;
+    }
+
+    .preview-empty {
+      max-width: 360px;
+      padding: 18px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .preview-image {
+      max-width: 100%;
+      max-height: 72vh;
+      display: block;
+      border-radius: 8px;
+      box-shadow: 0 18px 52px rgba(0, 0, 0, 0.34);
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .detail {
+      min-height: 62px;
+      padding: 11px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.045);
+    }
+
+    .detail span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .detail strong {
+      display: block;
+      margin-top: 6px;
+      overflow: hidden;
+      color: var(--muted-strong);
+      font-size: 14px;
+      line-height: 1.3;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .error-box {
+      margin: 0;
+      padding: 14px 15px;
+      border-radius: 8px;
+      border: 1px solid rgba(251, 113, 133, 0.32);
+      background: rgba(251, 113, 133, 0.1);
+      color: #fecdd3;
+      font-size: 14px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        width: min(100vw - 24px, 760px);
+        padding: 14px 0;
+      }
+
+      .topbar,
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      h1 {
+        font-size: 30px;
+      }
+
+      .subtitle {
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .actions {
+        justify-content: flex-start;
+      }
+
+      .status-strip {
+        display: flex;
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .status-text {
+        white-space: normal;
+      }
+
+      .metric {
+        width: 100%;
+      }
+
+      .pane {
+        min-height: 420px;
+      }
+
+      .editor-shell,
+      textarea {
+        min-height: 360px;
+        font-size: 13px;
+      }
+
+      .line-gutter {
+        width: 48px;
+        font-size: 13px;
+      }
+
+      .editor-shell {
+        grid-template-columns: 48px minmax(0, 1fr);
+      }
+
+      .preview-stage {
+        min-height: 300px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .actions,
+      .button {
+        width: 100%;
+      }
+
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <rect width="18" height="14" x="3" y="5" rx="2"></rect>
+            <circle cx="8.5" cy="10.5" r="1.5"></circle>
+            <path d="m21 15-5-5L5 21"></path>
+          </svg>
+        </div>
+        <div>
+          <h1>Base64 转图片</h1>
+          <p class="subtitle">粘贴 Base64 或 data:image/...;base64，自动识别类型并预览图片。</p>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="button" id="sampleBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path>
+            <path d="M14 2v4a2 2 0 0 0 2 2h4"></path>
+            <path d="M10 9H8"></path>
+            <path d="M16 13H8"></path>
+            <path d="M16 17H8"></path>
+          </svg>
+          示例
+        </button>
+        <button class="button primary" id="downloadBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M12 15V3"></path>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <path d="m7 10 5 5 5-5"></path>
+          </svg>
+          下载图片
+        </button>
+      </div>
+    </header>
+
+    <section class="status-strip" id="statusStrip" aria-live="polite">
+      <div class="status-main">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span class="status-text" id="statusText">等待输入 Base64 图片数据</span>
+      </div>
+      <div class="metric" id="typeMetric">类型：-</div>
+      <div class="metric" id="sizeMetric">大小：0 B</div>
+      <div class="metric" id="dimensionMetric">尺寸：-</div>
+      <div class="metric" id="lengthMetric">长度：0</div>
+    </section>
+
+    <section class="workspace">
+      <article class="pane">
+        <div class="pane-head">
+          <div class="pane-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M4 7h16"></path>
+              <path d="M4 12h16"></path>
+              <path d="M4 17h10"></path>
+            </svg>
+            Base64 输入
+          </div>
+          <div class="pane-tools">
+            <button class="icon-button" id="pasteBtn" type="button" title="粘贴">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M8 4v3a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V4"></path>
+                <rect width="8" height="4" x="8" y="2" rx="1"></rect>
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+              </svg>
+            </button>
+            <button class="icon-button" id="clearBtn" type="button" title="清空">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M3 6h18"></path>
+                <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                <path d="M10 11v6"></path>
+                <path d="M14 11v6"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="editor-wrap">
+          <div class="editor-shell">
+            <pre class="line-gutter" id="inputLines" aria-hidden="true">1</pre>
+            <textarea id="input" spellcheck="false" wrap="off" placeholder="粘贴 data:image/png;base64,... 或纯 Base64"></textarea>
+          </div>
+        </div>
+      </article>
+
+      <article class="pane">
+        <div class="pane-head">
+          <div class="pane-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <rect width="18" height="14" x="3" y="5" rx="2"></rect>
+              <circle cx="8.5" cy="10.5" r="1.5"></circle>
+              <path d="m21 15-5-5L5 21"></path>
+            </svg>
+            图片预览
+          </div>
+          <div class="pane-tools">
+            <button class="icon-button" id="copyBtn" type="button" title="复制 Data URL">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <rect width="14" height="14" x="8" y="8" rx="2"></rect>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="preview-wrap">
+          <div class="preview-stage" id="previewStage">
+            <div class="preview-empty" id="emptyState">图片预览会显示在这里。支持 PNG、JPEG、SVG、WebP、GIF 等常见图片类型。</div>
+            <img class="preview-image hidden" id="previewImage" alt="Base64 解码图片预览">
+          </div>
+          <div class="error-box hidden" id="errorBox"></div>
+          <div class="detail-grid">
+            <div class="detail">
+              <span>MIME</span>
+              <strong id="detailMime">-</strong>
+            </div>
+            <div class="detail">
+              <span>文件名</span>
+              <strong id="detailFile">-</strong>
+            </div>
+            <div class="detail">
+              <span>原始格式</span>
+              <strong id="detailSource">-</strong>
+            </div>
+            <div class="detail">
+              <span>Base64 长度</span>
+              <strong id="detailLength">0</strong>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const input = document.querySelector("#input");
+    const inputLines = document.querySelector("#inputLines");
+    const statusStrip = document.querySelector("#statusStrip");
+    const statusText = document.querySelector("#statusText");
+    const typeMetric = document.querySelector("#typeMetric");
+    const sizeMetric = document.querySelector("#sizeMetric");
+    const dimensionMetric = document.querySelector("#dimensionMetric");
+    const lengthMetric = document.querySelector("#lengthMetric");
+    const previewImage = document.querySelector("#previewImage");
+    const emptyState = document.querySelector("#emptyState");
+    const errorBox = document.querySelector("#errorBox");
+    const detailMime = document.querySelector("#detailMime");
+    const detailFile = document.querySelector("#detailFile");
+    const detailSource = document.querySelector("#detailSource");
+    const detailLength = document.querySelector("#detailLength");
+    const sampleBtn = document.querySelector("#sampleBtn");
+    const pasteBtn = document.querySelector("#pasteBtn");
+    const clearBtn = document.querySelector("#clearBtn");
+    const copyBtn = document.querySelector("#copyBtn");
+    const downloadBtn = document.querySelector("#downloadBtn");
+
+    const sample = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjAwIDIwMCI+CiAgPHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNmMGY0ZjgiIHJ4PSI4Ii8+CiAgPHRleHQgeD0iMTAwIiB5PSIxMDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJjZW50cmFsIgogICAgICAgIGZvbnQtc2l6ZT0iMjgiIGZvbnQtZmFtaWx5PSJNaWNyb3NvZnQgWWFIZWksIFNpbUhlaSwgc2Fucy1zZXJpZiIKICAgICAgICBmaWxsPSIjMzMzIj7nga88L3RleHQ+Cjwvc3ZnPg==`;
+
+    let parseTimer = 0;
+    let currentDataUrl = "";
+    let currentMime = "";
+    let currentBytes = 0;
+
+    input.addEventListener("input", () => {
+      updateInputLineNumbers();
+      window.clearTimeout(parseTimer);
+      parseTimer = window.setTimeout(parseAndRender, 120);
+    });
+
+    input.addEventListener("scroll", () => {
+      inputLines.scrollTop = input.scrollTop;
+    });
+
+    sampleBtn.addEventListener("click", () => {
+      input.value = sample;
+      input.focus();
+      updateInputLineNumbers();
+      parseAndRender();
+    });
+
+    pasteBtn.addEventListener("click", async () => {
+      if (!navigator.clipboard?.readText) {
+        setStatus("invalid", "当前浏览器不支持直接读取剪贴板");
+        return;
+      }
+
+      try {
+        input.value = await navigator.clipboard.readText();
+        input.focus();
+        updateInputLineNumbers();
+        parseAndRender();
+      } catch {
+        setStatus("invalid", "浏览器没有授权读取剪贴板");
+      }
+    });
+
+    clearBtn.addEventListener("click", () => {
+      input.value = "";
+      input.focus();
+      updateInputLineNumbers();
+      renderEmpty();
+    });
+
+    copyBtn.addEventListener("click", async () => {
+      if (!currentDataUrl) {
+        setStatus("invalid", "没有可复制的 Data URL");
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(currentDataUrl);
+        setStatus("valid", "已复制图片 Data URL");
+      } catch {
+        setStatus("invalid", "复制失败，请手动复制输入内容");
+      }
+    });
+
+    downloadBtn.addEventListener("click", () => {
+      if (!currentDataUrl) {
+        setStatus("invalid", "没有可下载的图片");
+        return;
+      }
+
+      const link = document.createElement("a");
+      link.href = currentDataUrl;
+      link.download = buildFileName(currentMime);
+      link.click();
+    });
+
+    function parseAndRender() {
+      const raw = input.value.trim();
+
+      if (!raw) {
+        renderEmpty();
+        return;
+      }
+
+      const result = parseBase64Image(raw);
+      if (!result.ok) {
+        renderError(result.message);
+        return;
+      }
+
+      currentDataUrl = result.dataUrl;
+      currentMime = result.mime;
+      currentBytes = result.bytes.length;
+      previewImage.onload = () => {
+        const width = previewImage.naturalWidth || 0;
+        const height = previewImage.naturalHeight || 0;
+        dimensionMetric.textContent = width && height ? `尺寸：${width} x ${height}` : "尺寸：-";
+        setStatus("valid", "图片解析成功");
+      };
+      previewImage.onerror = () => {
+        renderError("Base64 已解码，但浏览器无法按图片加载。请确认 MIME 类型和内容是否匹配。");
+      };
+      previewImage.src = result.dataUrl;
+      previewImage.classList.remove("hidden");
+      emptyState.classList.add("hidden");
+      errorBox.classList.add("hidden");
+      setStatus("valid", "图片解析成功");
+      typeMetric.textContent = `类型：${result.mime}`;
+      sizeMetric.textContent = `大小：${formatBytes(result.bytes.length)}`;
+      lengthMetric.textContent = `长度：${formatNumber(result.base64.length)}`;
+      detailMime.textContent = result.mime;
+      detailFile.textContent = buildFileName(result.mime);
+      detailSource.textContent = result.sourceType;
+      detailLength.textContent = formatNumber(result.base64.length);
+    }
+
+    function parseBase64Image(raw) {
+      const normalizedText = raw.trim();
+      const dataUrlMatch = normalizedText.match(/^data:([^;,]+)?((?:;[^,]*)*);base64,(.*)$/is);
+      const sourceType = dataUrlMatch ? "Data URL" : "纯 Base64";
+      const declaredMime = dataUrlMatch?.[1]?.trim().toLowerCase() || "";
+      const payload = dataUrlMatch ? dataUrlMatch[3] : normalizedText;
+      const base64 = normalizeBase64(payload);
+
+      if (!base64) {
+        return { ok: false, message: "没有找到 Base64 内容" };
+      }
+
+      if (!/^[A-Za-z0-9+/=]+$/.test(base64)) {
+        return { ok: false, message: "Base64 内容包含非法字符" };
+      }
+
+      let bytes;
+      try {
+        bytes = base64ToBytes(base64);
+      } catch {
+        return { ok: false, message: "Base64 解码失败，请检查内容是否完整" };
+      }
+
+      if (!bytes.length) {
+        return { ok: false, message: "Base64 解码结果为空" };
+      }
+
+      const detectedMime = detectMime(bytes);
+      const mime = normalizeMime(declaredMime || detectedMime);
+      if (!mime.startsWith("image/")) {
+        return { ok: false, message: `当前内容不是可预览的图片类型：${mime || "未知类型"}` };
+      }
+
+      return {
+        ok: true,
+        base64,
+        bytes,
+        dataUrl: `data:${mime};base64,${base64}`,
+        mime,
+        sourceType
+      };
+    }
+
+    function normalizeBase64(text) {
+      const compact = text.replace(/\s+/g, "").replace(/-/g, "+").replace(/_/g, "/");
+      const padding = compact.length % 4;
+      if (padding === 0) {
+        return compact;
+      }
+      return compact + "=".repeat(4 - padding);
+    }
+
+    function base64ToBytes(base64) {
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let index = 0; index < binary.length; index += 1) {
+        bytes[index] = binary.charCodeAt(index);
+      }
+      return bytes;
+    }
+
+    function detectMime(bytes) {
+      if (matches(bytes, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) {
+        return "image/png";
+      }
+      if (matches(bytes, [0xff, 0xd8, 0xff])) {
+        return "image/jpeg";
+      }
+      if (startsWithAscii(bytes, "GIF87a") || startsWithAscii(bytes, "GIF89a")) {
+        return "image/gif";
+      }
+      if (startsWithAscii(bytes, "RIFF") && asciiAt(bytes, 8, 4) === "WEBP") {
+        return "image/webp";
+      }
+      if (startsWithAscii(bytes, "BM")) {
+        return "image/bmp";
+      }
+      if (looksLikeSvg(bytes)) {
+        return "image/svg+xml";
+      }
+      return "";
+    }
+
+    function normalizeMime(mime) {
+      const cleaned = (mime || "").toLowerCase();
+      const aliases = {
+        "image/jpg": "image/jpeg",
+        "image/svg": "image/svg+xml",
+        "svg": "image/svg+xml",
+        "png": "image/png",
+        "jpg": "image/jpeg",
+        "jpeg": "image/jpeg",
+        "gif": "image/gif",
+        "webp": "image/webp",
+        "bmp": "image/bmp"
+      };
+      return aliases[cleaned] || cleaned || "image/png";
+    }
+
+    function looksLikeSvg(bytes) {
+      const sampleText = new TextDecoder("utf-8", { fatal: false }).decode(bytes.slice(0, Math.min(bytes.length, 1024))).trimStart();
+      return sampleText.startsWith("<svg") || (sampleText.startsWith("<?xml") && sampleText.includes("<svg"));
+    }
+
+    function matches(bytes, signature) {
+      return signature.every((value, index) => bytes[index] === value);
+    }
+
+    function startsWithAscii(bytes, text) {
+      return asciiAt(bytes, 0, text.length) === text;
+    }
+
+    function asciiAt(bytes, start, length) {
+      return Array.from(bytes.slice(start, start + length), (value) => String.fromCharCode(value)).join("");
+    }
+
+    function buildFileName(mime) {
+      const extensions = {
+        "image/png": "png",
+        "image/jpeg": "jpg",
+        "image/gif": "gif",
+        "image/webp": "webp",
+        "image/svg+xml": "svg",
+        "image/bmp": "bmp"
+      };
+      return `base64-image.${extensions[mime] || "png"}`;
+    }
+
+    function renderError(message) {
+      currentDataUrl = "";
+      currentMime = "";
+      currentBytes = 0;
+      previewImage.removeAttribute("src");
+      previewImage.classList.add("hidden");
+      emptyState.classList.add("hidden");
+      errorBox.textContent = message;
+      errorBox.classList.remove("hidden");
+      setStatus("invalid", "图片解析失败");
+      typeMetric.textContent = "类型：-";
+      sizeMetric.textContent = "大小：0 B";
+      dimensionMetric.textContent = "尺寸：-";
+      lengthMetric.textContent = `长度：${formatNumber(normalizeBase64(input.value).length)}`;
+      detailMime.textContent = "-";
+      detailFile.textContent = "-";
+      detailSource.textContent = "-";
+      detailLength.textContent = formatNumber(normalizeBase64(input.value).length);
+    }
+
+    function renderEmpty() {
+      currentDataUrl = "";
+      currentMime = "";
+      currentBytes = 0;
+      previewImage.removeAttribute("src");
+      previewImage.classList.add("hidden");
+      emptyState.classList.remove("hidden");
+      errorBox.classList.add("hidden");
+      setStatus("", "等待输入 Base64 图片数据");
+      typeMetric.textContent = "类型：-";
+      sizeMetric.textContent = "大小：0 B";
+      dimensionMetric.textContent = "尺寸：-";
+      lengthMetric.textContent = "长度：0";
+      detailMime.textContent = "-";
+      detailFile.textContent = "-";
+      detailSource.textContent = "-";
+      detailLength.textContent = "0";
+    }
+
+    function updateInputLineNumbers() {
+      const lines = Math.max(1, countLines(input.value));
+      inputLines.textContent = Array.from({ length: lines }, (_, index) => index + 1).join("\n");
+      inputLines.scrollTop = input.scrollTop;
+    }
+
+    function setStatus(state, message) {
+      statusStrip.classList.remove("valid", "invalid");
+      if (state) {
+        statusStrip.classList.add(state);
+      }
+      statusText.textContent = message;
+    }
+
+    function countLines(text) {
+      return text ? text.split(/\r\n|\r|\n/).length : 0;
+    }
+
+    function formatBytes(bytes) {
+      if (bytes < 1024) {
+        return `${bytes} B`;
+      }
+
+      if (bytes < 1024 * 1024) {
+        return `${(bytes / 1024).toFixed(1)} KB`;
+      }
+
+      return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+    }
+
+    function formatNumber(value) {
+      return new Intl.NumberFormat("zh-CN").format(value);
+    }
+
+    updateInputLineNumbers();
+    renderEmpty();
+  </script>
+</body>
+</html>

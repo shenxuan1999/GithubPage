@@ -1,0 +1,1068 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GithubPage 工具首页</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #050505;
+      --bg-soft: #0c0d0f;
+      --panel: #111317;
+      --panel-soft: #171a20;
+      --text: #f5f7fb;
+      --muted: #9aa4b2;
+      --muted-strong: #c9d1dc;
+      --line: rgba(255, 255, 255, 0.12);
+      --line-strong: rgba(255, 255, 255, 0.22);
+      --blue: #2f7df6;
+      --cyan: #2dd4bf;
+      --violet: #8b5cf6;
+      --amber: #f59e0b;
+      --shadow: 0 28px 80px rgba(0, 0, 0, 0.44);
+      --sans: Inter, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      --mono: Consolas, "SFMono-Regular", "Liberation Mono", Menlo, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-height: 100%;
+      background: var(--bg);
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: var(--sans);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 260px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        var(--bg);
+      background-size: auto, 80px 80px, 80px 80px, auto;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(120deg, rgba(47, 125, 246, 0.16), transparent 30%, transparent 72%, rgba(45, 212, 191, 0.14)),
+        linear-gradient(180deg, transparent, rgba(5, 5, 5, 0.82) 78%);
+      z-index: -1;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    svg {
+      display: block;
+    }
+
+    button,
+    a {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .site {
+      width: min(1200px, calc(100vw - 48px));
+      margin: 0 auto;
+    }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      width: min(1200px, calc(100vw - 48px));
+      margin: 0 auto;
+      padding: 18px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      backdrop-filter: blur(18px);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 11px;
+      min-width: 0;
+      color: var(--text);
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04)),
+        #090a0c;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+      flex: 0 0 auto;
+    }
+
+    .brand-mark svg {
+      width: 19px;
+      height: 19px;
+      stroke-width: 2.2;
+    }
+
+    .brand-name {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .nav-link {
+      min-height: 34px;
+      padding: 0 11px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      color: var(--muted);
+      font-size: 13px;
+      transition: color 160ms ease, background 160ms ease;
+      white-space: nowrap;
+    }
+
+    .nav-link:hover,
+    .nav-link:focus-visible {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.08);
+      outline: none;
+    }
+
+    .nav-cta {
+      min-height: 34px;
+      padding: 0 12px;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: #050505;
+      background: #ffffff;
+      font-size: 13px;
+      font-weight: 700;
+      transition: transform 160ms ease, background 160ms ease;
+      white-space: nowrap;
+    }
+
+    .nav-cta:hover,
+    .nav-cta:focus-visible {
+      transform: translateY(-1px);
+      background: #eef3ff;
+      outline: none;
+    }
+
+    .nav-cta svg {
+      width: 15px;
+      height: 15px;
+      stroke-width: 2.4;
+    }
+
+    .hero {
+      min-height: calc(100vh - 70px);
+      padding: 76px 0 74px;
+      display: grid;
+      grid-template-columns: minmax(0, 0.96fr) minmax(420px, 1.04fr);
+      gap: 42px;
+      align-items: center;
+    }
+
+    .eyebrow {
+      width: fit-content;
+      min-height: 30px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted-strong);
+      background: rgba(255, 255, 255, 0.05);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 18px rgba(45, 212, 191, 0.84);
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    .hero-title {
+      max-width: 680px;
+      margin-top: 18px;
+      font-size: 68px;
+      line-height: 1.02;
+      letter-spacing: 0;
+    }
+
+    .hero-copy {
+      max-width: 620px;
+      margin-top: 22px;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.72;
+    }
+
+    .hero-actions {
+      margin-top: 30px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .button {
+      min-height: 44px;
+      padding: 0 16px;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.06);
+      font-size: 14px;
+      font-weight: 700;
+      transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+      white-space: nowrap;
+    }
+
+    .button.primary {
+      color: #050505;
+      background: #ffffff;
+      border-color: #ffffff;
+    }
+
+    .button:hover,
+    .button:focus-visible {
+      border-color: rgba(255, 255, 255, 0.38);
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    .button.primary:hover,
+    .button.primary:focus-visible {
+      color: #050505;
+      background: #eef3ff;
+      border-color: #eef3ff;
+    }
+
+    .button svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2.3;
+      flex: 0 0 auto;
+    }
+
+    .hero-meta {
+      margin-top: 34px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      max-width: 620px;
+    }
+
+    .meta-item {
+      min-height: 82px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.045);
+    }
+
+    .meta-item strong {
+      display: block;
+      color: var(--text);
+      font-size: 22px;
+      line-height: 1.2;
+    }
+
+    .meta-item span {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.42;
+    }
+
+    .product-frame {
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.035)),
+        #0a0b0e;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .frame-top {
+      min-height: 44px;
+      padding: 0 14px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .dots {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex: 0 0 auto;
+    }
+
+    .dots span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.22);
+    }
+
+    .dots span:nth-child(1) {
+      background: #ff5f57;
+    }
+
+    .dots span:nth-child(2) {
+      background: #ffbd2e;
+    }
+
+    .dots span:nth-child(3) {
+      background: #28c840;
+    }
+
+    .frame-url {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .frame-body {
+      min-height: 520px;
+      padding: 16px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 14px;
+    }
+
+    .tool-status {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .status-card {
+      min-height: 78px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.055);
+    }
+
+    .status-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .status-card strong {
+      display: block;
+      margin-top: 7px;
+      font-size: 24px;
+      line-height: 1.15;
+    }
+
+    .preview-shell {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f7f9fc;
+      overflow: hidden;
+      position: relative;
+      min-height: 390px;
+    }
+
+    .preview-bar {
+      min-height: 44px;
+      padding: 0 14px;
+      border-bottom: 1px solid #d8e0ec;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: #64748b;
+      background: #ffffff;
+      font-size: 13px;
+    }
+
+    .preview-grid {
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .preview-pane {
+      min-height: 278px;
+      border: 1px solid #d8e0ec;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #162033;
+      overflow: hidden;
+    }
+
+    .pane-head {
+      min-height: 38px;
+      padding: 0 11px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #64748b;
+      font-size: 12px;
+    }
+
+    .code-lines {
+      padding: 13px;
+      color: #0f172a;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.78;
+      white-space: nowrap;
+    }
+
+    .code-lines .key {
+      color: #1769e0;
+    }
+
+    .code-lines .value {
+      color: #0e8f83;
+    }
+
+    .result-tree {
+      padding: 13px;
+      display: grid;
+      gap: 9px;
+    }
+
+    .tree-row {
+      min-height: 28px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 10px;
+      color: #475569;
+      background: #f8fafc;
+      font-size: 12px;
+    }
+
+    .tree-row::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #1769e0;
+      flex: 0 0 auto;
+    }
+
+    .section {
+      padding: 92px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .section-kicker {
+      color: var(--cyan);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0;
+      margin-bottom: 10px;
+    }
+
+    .section-title {
+      font-size: 42px;
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    .section-copy {
+      max-width: 500px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.72;
+    }
+
+    .tools-grid {
+      display: grid;
+      grid-template-columns: 1.12fr 0.88fr;
+      gap: 16px;
+    }
+
+    .tool-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035)),
+        var(--panel);
+      min-height: 250px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 22px;
+      overflow: hidden;
+      position: relative;
+      transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+    }
+
+    .tool-card::after {
+      content: "";
+      position: absolute;
+      inset: auto 18px 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.46), transparent);
+      opacity: 0.5;
+    }
+
+    a.tool-card:hover,
+    a.tool-card:focus-visible {
+      border-color: rgba(255, 255, 255, 0.34);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.045)),
+        var(--panel);
+      transform: translateY(-2px);
+      outline: none;
+    }
+
+    .tool-card.featured {
+      min-height: 372px;
+      grid-row: span 2;
+      background:
+        linear-gradient(145deg, rgba(47, 125, 246, 0.18), transparent 42%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.035)),
+        var(--panel);
+    }
+
+    .card-icon {
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    }
+
+    .card-icon svg {
+      width: 23px;
+      height: 23px;
+      stroke-width: 2.1;
+    }
+
+    .tool-card h3 {
+      margin-top: 18px;
+      font-size: 24px;
+      line-height: 1.16;
+      letter-spacing: 0;
+    }
+
+    .tool-card p {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .card-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted-strong);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .card-bottom svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2.2;
+      flex: 0 0 auto;
+    }
+
+    .tag-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .tag {
+      min-height: 28px;
+      padding: 0 9px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.04);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .stack {
+      display: grid;
+      gap: 16px;
+    }
+
+    .workflow {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .workflow-card {
+      min-height: 178px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.045);
+    }
+
+    .workflow-card span {
+      color: var(--cyan);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .workflow-card h3 {
+      margin-top: 12px;
+      font-size: 20px;
+      line-height: 1.22;
+      letter-spacing: 0;
+    }
+
+    .workflow-card p {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .footer {
+      padding: 26px 0 36px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 980px) {
+      .hero {
+        min-height: auto;
+        padding-top: 58px;
+        grid-template-columns: 1fr;
+      }
+
+      .hero-title {
+        max-width: 760px;
+        font-size: 58px;
+      }
+
+      .hero-meta,
+      .product-frame {
+        max-width: 760px;
+      }
+
+      .tools-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .tool-card.featured {
+        grid-row: auto;
+      }
+
+      .workflow {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+
+      .site,
+      .nav {
+        width: min(100% - 24px, 1200px);
+      }
+
+      .nav {
+        align-items: flex-start;
+        flex-direction: column;
+        padding-top: 14px;
+      }
+
+      .nav-links {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .hero {
+        padding: 40px 0 56px;
+      }
+
+      .hero-title {
+        font-size: 40px;
+        line-height: 1.08;
+      }
+
+      .hero-copy {
+        font-size: 15px;
+      }
+
+      .hero-actions,
+      .button {
+        width: 100%;
+      }
+
+      .hero-meta {
+        grid-template-columns: 1fr;
+      }
+
+      .tool-status,
+      .preview-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .frame-body {
+        min-height: auto;
+        padding: 12px;
+      }
+
+      .preview-shell {
+        min-height: auto;
+      }
+
+      .preview-pane {
+        min-height: 220px;
+      }
+
+      .section {
+        padding: 62px 0;
+      }
+
+      .section-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .section-title {
+        font-size: 31px;
+      }
+
+      .tool-card,
+      .tool-card.featured {
+        min-height: 236px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="nav" aria-label="站点导航">
+    <a class="brand" href="https://shenxuan1999.github.io/GithubPage/" aria-label="GithubPage 首页">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 7h16"></path>
+          <path d="M4 12h10"></path>
+          <path d="M4 17h7"></path>
+          <path d="m17 14 3 3-3 3"></path>
+        </svg>
+      </span>
+      <span class="brand-name">GithubPage</span>
+    </a>
+
+    <nav class="nav-links" aria-label="页面导航">
+      <a class="nav-link" href="#tools">Tools</a>
+      <a class="nav-link" href="#workflow">Structure</a>
+      <a class="nav-cta" href="https://shenxuan1999.github.io/GithubPage/json-parser/">
+        JSON Parser
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+          aria-hidden="true">
+          <path d="M5 12h14"></path>
+          <path d="m13 6 6 6-6 6"></path>
+        </svg>
+      </a>
+    </nav>
+  </header>
+
+  <main class="site">
+    <section class="hero" aria-label="首页介绍">
+      <div>
+        <p class="eyebrow">Personal tool workspace</p>
+        <h1 class="hero-title">把高频工具，收进一个足够干净的入口。</h1>
+        <p class="hero-copy">一个面向日常开发、调试和数据整理的轻量工具首页。入口保持克制，工具保持独立，后续新增页面也能自然接入。</p>
+        <div class="hero-actions">
+          <a class="button primary" href="https://shenxuan1999.github.io/GithubPage/json-parser/">
+            打开 JSON 解析器
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+              aria-hidden="true">
+              <path d="M5 12h14"></path>
+              <path d="m13 6 6 6-6 6"></path>
+            </svg>
+          </a>
+          <a class="button" href="#tools">
+            浏览工具
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+              aria-hidden="true">
+              <rect width="7" height="7" x="3" y="3" rx="1"></rect>
+              <rect width="7" height="7" x="14" y="3" rx="1"></rect>
+              <rect width="7" height="7" x="14" y="14" rx="1"></rect>
+              <rect width="7" height="7" x="3" y="14" rx="1"></rect>
+            </svg>
+          </a>
+        </div>
+
+        <div class="hero-meta" aria-label="站点概览">
+          <div class="meta-item">
+            <strong>01</strong>
+            <span>当前可用工具</span>
+          </div>
+          <div class="meta-item">
+            <strong>∞</strong>
+            <span>后续页面扩展</span>
+          </div>
+          <div class="meta-item">
+            <strong>GitHub</strong>
+            <span>Pages 静态部署</span>
+          </div>
+        </div>
+      </div>
+
+      <aside class="product-frame" aria-label="JSON 解析器界面预览">
+        <div class="frame-top">
+          <div class="dots" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <span class="frame-url">shenxuan1999.github.io/GithubPage/json-parser/</span>
+        </div>
+        <div class="frame-body">
+          <div class="tool-status">
+            <div class="status-card">
+              <span>Active tool</span>
+              <strong>JSON Parser</strong>
+            </div>
+            <div class="status-card">
+              <span>Workflow</span>
+              <strong>Parse · Format · Copy</strong>
+            </div>
+          </div>
+
+          <div class="preview-shell">
+            <div class="preview-bar">
+              <span>JSON 解析器</span>
+              <span>Ready</span>
+            </div>
+            <div class="preview-grid">
+              <div class="preview-pane">
+                <div class="pane-head">
+                  <span>Input</span>
+                  <span>raw</span>
+                </div>
+                <div class="code-lines" aria-hidden="true">
+                  {<br>
+                  &nbsp;&nbsp;<span class="key">"tool"</span>: <span class="value">"json-parser"</span>,<br>
+                  &nbsp;&nbsp;<span class="key">"status"</span>: <span class="value">"ready"</span>,<br>
+                  &nbsp;&nbsp;<span class="key">"deploy"</span>: <span class="value">"pages"</span><br>
+                  }
+                </div>
+              </div>
+              <div class="preview-pane">
+                <div class="pane-head">
+                  <span>Output</span>
+                  <span>valid</span>
+                </div>
+                <div class="result-tree" aria-hidden="true">
+                  <div class="tree-row">root</div>
+                  <div class="tree-row">tool: json-parser</div>
+                  <div class="tree-row">status: ready</div>
+                  <div class="tree-row">deploy: pages</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section id="tools" class="section" aria-labelledby="tools-title">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">Tool library</p>
+          <h2 id="tools-title" class="section-title">工具入口</h2>
+        </div>
+        <p class="section-copy">当前先接入 JSON 解析器，其他高频页面可以继续追加到这里，形成稳定的个人工具库。</p>
+      </div>
+
+      <div class="tools-grid">
+        <a class="tool-card featured" href="https://shenxuan1999.github.io/GithubPage/json-parser/">
+          <span>
+            <span class="card-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m8 9-3 3 3 3"></path>
+                <path d="m16 9 3 3-3 3"></path>
+                <path d="m14 5-4 14"></path>
+              </svg>
+            </span>
+            <h3>JSON 解析器</h3>
+            <p>面向接口调试和数据整理的在线 JSON 工具，支持格式化、校验、压缩和复制。</p>
+            <span class="tag-row">
+              <span class="tag">Format</span>
+              <span class="tag">Validate</span>
+              <span class="tag">Minify</span>
+              <span class="tag">Copy</span>
+            </span>
+          </span>
+          <span class="card-bottom">
+            Launch tool
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+              aria-hidden="true">
+              <path d="M5 12h14"></path>
+              <path d="m13 6 6 6-6 6"></path>
+            </svg>
+          </span>
+        </a>
+
+        <div class="stack">
+          <div class="tool-card">
+            <span>
+              <span class="card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path d="M4 7h16"></path>
+                  <path d="M4 12h10"></path>
+                  <path d="M4 17h13"></path>
+                </svg>
+              </span>
+              <h3>Text Utilities</h3>
+              <p>预留给文本清理、大小写转换、字符统计等轻量工具。</p>
+            </span>
+            <span class="card-bottom">Planned</span>
+          </div>
+
+          <div class="tool-card">
+            <span>
+              <span class="card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path d="M4 18V6"></path>
+                  <path d="M8 18v-8"></path>
+                  <path d="M12 18V9"></path>
+                  <path d="M16 18v-5"></path>
+                  <path d="M20 18V8"></path>
+                </svg>
+              </span>
+              <h3>Data Tools</h3>
+              <p>预留给数据预览、字段映射、格式转换等页面。</p>
+            </span>
+            <span class="card-bottom">Planned</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="workflow" class="section" aria-labelledby="workflow-title">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">Structure</p>
+          <h2 id="workflow-title" class="section-title">保持首页轻，工具页独立。</h2>
+        </div>
+        <p class="section-copy">首页只承担发现和跳转，不把单个工具的复杂操作塞进同一个页面。</p>
+      </div>
+
+      <div class="workflow">
+        <div class="workflow-card">
+          <span>01</span>
+          <h3>统一入口</h3>
+          <p>所有工具从根目录首页进入，链接使用 GitHub Pages 的公开路径。</p>
+        </div>
+        <div class="workflow-card">
+          <span>02</span>
+          <h3>独立页面</h3>
+          <p>每个工具保留自己的目录和页面结构，方便单独维护。</p>
+        </div>
+        <div class="workflow-card">
+          <span>03</span>
+          <h3>持续扩展</h3>
+          <p>新增工具时只需要添加一个卡片和一个跳转地址。</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site footer">
+    <span>GithubPage 工具首页</span>
+    <span>Published with GitHub Pages</span>
+  </footer>
+</body>
+
+</html>
