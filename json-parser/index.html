@@ -1,0 +1,1159 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JSON 解析器</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --panel-soft: #f8fafc;
+      --text: #162033;
+      --muted: #64748b;
+      --border: #d9e1ec;
+      --border-strong: #b8c4d4;
+      --primary: #1769e0;
+      --primary-dark: #0f4fb3;
+      --success: #0e8f63;
+      --danger: #cf2f3b;
+      --warning: #b86b00;
+      --shadow: 0 18px 50px rgba(33, 50, 84, 0.11);
+      --mono: Consolas, "SFMono-Regular", "Liberation Mono", Menlo, monospace;
+      --sans: Inter, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(245, 247, 251, 0.94)),
+        repeating-linear-gradient(90deg, rgba(23, 105, 224, 0.055) 0, rgba(23, 105, 224, 0.055) 1px, transparent 1px, transparent 84px);
+      color: var(--text);
+      font-family: var(--sans);
+    }
+
+    button,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .app {
+      width: min(1480px, calc(100vw - 40px));
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 24px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 0 2px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .mark {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: #14213d;
+      color: #fff;
+      box-shadow: 0 12px 30px rgba(20, 33, 61, 0.24);
+      flex: 0 0 auto;
+    }
+
+    .mark svg {
+      width: 25px;
+      height: 25px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(24px, 3vw, 38px);
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .button {
+      min-height: 38px;
+      border-radius: 8px;
+      padding: 0 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #1d2939;
+      background: #fff;
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 24px rgba(33, 50, 84, 0.06);
+      transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+      white-space: nowrap;
+    }
+
+    .button:hover {
+      border-color: var(--border-strong);
+      transform: translateY(-1px);
+    }
+
+    .button.primary {
+      color: #fff;
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .button.primary:hover {
+      background: var(--primary-dark);
+      border-color: var(--primary-dark);
+    }
+
+    .button svg {
+      width: 17px;
+      height: 17px;
+      stroke-width: 2.2;
+      flex: 0 0 auto;
+    }
+
+    .status-strip {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) repeat(3, auto);
+      align-items: center;
+      gap: 10px;
+      padding: 13px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.82);
+      box-shadow: var(--shadow);
+    }
+
+    .status-main {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--warning);
+      box-shadow: 0 0 0 4px rgba(184, 107, 0, 0.12);
+      flex: 0 0 auto;
+    }
+
+    .status-strip.valid .status-dot {
+      background: var(--success);
+      box-shadow: 0 0 0 4px rgba(14, 143, 99, 0.12);
+    }
+
+    .status-strip.invalid .status-dot {
+      background: var(--danger);
+      box-shadow: 0 0 0 4px rgba(207, 47, 59, 0.12);
+    }
+
+    .status-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .metric {
+      min-height: 30px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      background: var(--panel-soft);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .workspace {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .pane {
+      min-height: 540px;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .pane-head {
+      height: 58px;
+      padding: 0 14px 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      background: #fbfdff;
+    }
+
+    .pane-title {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-weight: 700;
+      color: #223048;
+    }
+
+    .pane-title svg {
+      width: 18px;
+      height: 18px;
+      color: var(--primary);
+      flex: 0 0 auto;
+    }
+
+    .pane-tools {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+
+    .icon-button {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: #40516c;
+      background: transparent;
+      border: 1px solid transparent;
+      transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+    }
+
+    .icon-button:hover {
+      background: #eef4ff;
+      border-color: #cfe0ff;
+      color: var(--primary);
+    }
+
+    .icon-button svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .editor-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      background: #0f172a;
+    }
+
+    .editor-shell {
+      height: 100%;
+      min-height: 480px;
+      display: grid;
+      grid-template-columns: 56px minmax(0, 1fr);
+      background: #0f172a;
+    }
+
+    .line-gutter {
+      margin: 0;
+      padding: 18px 10px 18px 0;
+      overflow: hidden;
+      color: #526179;
+      background: #0b1220;
+      border-right: 1px solid rgba(148, 163, 184, 0.18);
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.68;
+      text-align: right;
+      user-select: none;
+      white-space: pre;
+    }
+
+    textarea {
+      width: 100%;
+      height: 100%;
+      min-height: 480px;
+      padding: 18px;
+      resize: none;
+      outline: none;
+      border: 0;
+      display: block;
+      color: #e7edf8;
+      background: #0f172a;
+      caret-color: #80b7ff;
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.68;
+      tab-size: 2;
+      letter-spacing: 0;
+      overflow: auto;
+      white-space: pre;
+    }
+
+    textarea::placeholder {
+      color: #7f8da3;
+    }
+
+    .output {
+      height: 100%;
+      min-height: 480px;
+      margin: 0;
+      padding: 18px 0;
+      overflow: auto;
+      color: #dbe7f7;
+      background: #0f172a;
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.68;
+      white-space: pre;
+      tab-size: 2;
+    }
+
+    .placeholder {
+      padding-left: 18px;
+      color: #7f8da3;
+    }
+
+    .json-line {
+      min-width: max-content;
+      display: flex;
+      align-items: baseline;
+      min-height: 23.52px;
+    }
+
+    .output-line-no {
+      width: 56px;
+      padding-right: 10px;
+      flex: 0 0 56px;
+      color: #526179;
+      background: #0b1220;
+      border-right: 1px solid rgba(148, 163, 184, 0.18);
+      text-align: right;
+      user-select: none;
+      align-self: stretch;
+    }
+
+    .json-content {
+      min-width: 0;
+      padding-right: 24px;
+    }
+
+    .json-indent {
+      display: inline-block;
+      width: calc(var(--depth) * 22px);
+    }
+
+    .fold-toggle {
+      width: 18px;
+      height: 18px;
+      margin: 0 4px 0 0;
+      padding: 0;
+      border-radius: 5px;
+      display: inline-grid;
+      place-items: center;
+      color: #9fb4d1;
+      background: rgba(148, 163, 184, 0.12);
+      font-family: var(--mono);
+      font-size: 11px;
+      line-height: 1;
+      vertical-align: 1px;
+    }
+
+    .fold-toggle:hover {
+      color: #ffffff;
+      background: rgba(23, 105, 224, 0.55);
+    }
+
+    .json-key {
+      color: #8ecbff;
+    }
+
+    .json-string {
+      color: #91e6b3;
+    }
+
+    .json-number {
+      color: #f7c873;
+    }
+
+    .json-boolean {
+      color: #ffa3b2;
+    }
+
+    .json-null {
+      color: #aab7c8;
+    }
+
+    .json-bracket,
+    .json-punctuation,
+    .json-count {
+      color: #dbe7f7;
+    }
+
+    .json-count {
+      opacity: 0.62;
+    }
+
+    .error-box {
+      margin: 14px;
+      padding: 14px 15px;
+      border-radius: 8px;
+      border: 1px solid rgba(207, 47, 59, 0.28);
+      background: #fff5f6;
+      color: #9f1d28;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        width: min(100vw - 24px, 760px);
+        padding: 14px 0;
+      }
+
+      .topbar,
+      .status-strip,
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .actions {
+        justify-content: flex-start;
+      }
+
+      .status-strip {
+        display: flex;
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .status-text {
+        white-space: normal;
+      }
+
+      .metric {
+        width: 100%;
+      }
+
+      .pane {
+        min-height: 420px;
+      }
+
+      .editor-shell,
+      textarea,
+      .output {
+        min-height: 360px;
+        font-size: 13px;
+      }
+
+      .line-gutter,
+      .output-line-no {
+        width: 48px;
+        flex-basis: 48px;
+        font-size: 13px;
+      }
+
+      .editor-shell {
+        grid-template-columns: 48px minmax(0, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M8 4H6a2 2 0 0 0-2 2v3a3 3 0 0 1-2 3 3 3 0 0 1 2 3v3a2 2 0 0 0 2 2h2"></path>
+            <path d="M16 4h2a2 2 0 0 1 2 2v3a3 3 0 0 0 2 3 3 3 0 0 0-2 3v3a2 2 0 0 1-2 2h-2"></path>
+          </svg>
+        </div>
+        <div>
+          <h1>JSON 解析器</h1>
+          <p class="subtitle">自动校验、格式化、去转义，并将 Unicode 中文直接显示。</p>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="button" id="sampleBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path>
+            <path d="M14 2v4a2 2 0 0 0 2 2h4"></path>
+            <path d="M10 9H8"></path>
+            <path d="M16 13H8"></path>
+            <path d="M16 17H8"></path>
+          </svg>
+          示例
+        </button>
+        <button class="button primary" id="copyBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <rect width="14" height="14" x="8" y="8" rx="2"></rect>
+            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+          </svg>
+          复制结果
+        </button>
+      </div>
+    </header>
+
+    <section class="status-strip" id="statusStrip" aria-live="polite">
+      <div class="status-main">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span class="status-text" id="statusText">等待输入 JSON</span>
+      </div>
+      <div class="metric" id="typeMetric">类型：-</div>
+      <div class="metric" id="sizeMetric">大小：0 B</div>
+      <div class="metric" id="lineMetric">行数：0</div>
+    </section>
+
+    <section class="workspace">
+      <article class="pane">
+        <div class="pane-head">
+          <div class="pane-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+            </svg>
+            输入
+          </div>
+          <div class="pane-tools">
+            <button class="icon-button" id="pasteBtn" type="button" title="粘贴">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M8 4v3a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V4"></path>
+                <rect width="8" height="4" x="8" y="2" rx="1"></rect>
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+              </svg>
+            </button>
+            <button class="icon-button" id="clearBtn" type="button" title="清空">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M3 6h18"></path>
+                <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                <path d="M10 11v6"></path>
+                <path d="M14 11v6"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="editor-wrap">
+          <div class="editor-shell">
+            <pre class="line-gutter" id="inputLines" aria-hidden="true">1</pre>
+            <textarea id="input" spellcheck="false" wrap="off" placeholder='粘贴 JSON，例如：{"name":"\u5f20\u4e09","items":[1,2,3]}'></textarea>
+          </div>
+        </div>
+      </article>
+
+      <article class="pane">
+        <div class="pane-head">
+          <div class="pane-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="m18 16 4-4-4-4"></path>
+              <path d="m6 8-4 4 4 4"></path>
+              <path d="m14.5 4-5 16"></path>
+            </svg>
+            解析结果
+          </div>
+          <div class="pane-tools">
+            <button class="icon-button" id="downloadBtn" type="button" title="下载 JSON">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M12 15V3"></path>
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <path d="m7 10 5 5 5-5"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="editor-wrap" id="resultWrap">
+          <div class="output placeholder" id="output">解析后的 JSON 会显示在这里。</div>
+          <div class="error-box hidden" id="errorBox"></div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const input = document.querySelector("#input");
+    const inputLines = document.querySelector("#inputLines");
+    const output = document.querySelector("#output");
+    const errorBox = document.querySelector("#errorBox");
+    const statusStrip = document.querySelector("#statusStrip");
+    const statusText = document.querySelector("#statusText");
+    const typeMetric = document.querySelector("#typeMetric");
+    const sizeMetric = document.querySelector("#sizeMetric");
+    const lineMetric = document.querySelector("#lineMetric");
+    const sampleBtn = document.querySelector("#sampleBtn");
+    const clearBtn = document.querySelector("#clearBtn");
+    const pasteBtn = document.querySelector("#pasteBtn");
+    const copyBtn = document.querySelector("#copyBtn");
+    const downloadBtn = document.querySelector("#downloadBtn");
+
+    const sample = String.raw`{
+  "catalog": [
+    {
+      "key": "AlarmLine",
+      "label": "\u62A5\u8B66\u7EBF",
+      "description": null,
+      "tags": ["line", "threshold", "\u544A\u8B66"]
+    },
+    {
+      "key": "AlarmLevel",
+      "label": "\u62A5\u8B66\u63A8\u9001\u7EA7\u522B",
+      "description": null,
+      "levels": [
+        { "code": 1, "name": "\u4F4E", "channels": ["web"] },
+        { "code": 2, "name": "\u4E2D", "channels": ["web", "sms"] },
+        { "code": 3, "name": "\u9AD8", "channels": ["web", "sms", "phone"] }
+      ]
+    }
+  ],
+  "dimensionValues": {
+    "kind": 6,
+    "flag": true,
+    "module": "AdvancedAlarmSystem",
+    "group": "AlarmMessage",
+    "method": "QueryMessageIdentityAsync",
+    "identityTypes": ["device", "region", "user"],
+    "retryIntervals": [5, 15, 30, 60],
+    "enabledWeekdays": [1, 2, 3, 4, 5],
+    "matrix": [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1]
+    ]
+  },
+  "receivers": [
+    {
+      "id": 1001,
+      "name": "\u8FD0\u7EF4\u4E00\u7EC4",
+      "users": [
+        { "id": "u001", "name": "\u5F20\u4E09", "roles": ["owner", "reviewer"] },
+        { "id": "u002", "name": "\u674E\u56DB", "roles": ["viewer"] }
+      ]
+    },
+    {
+      "id": 1002,
+      "name": "\u503C\u73ED\u4E2D\u5FC3",
+      "users": []
+    }
+  ],
+  "history": [
+    { "time": "2026-07-06 09:00:00", "status": "created" },
+    { "time": "2026-07-06 09:15:00", "status": "pushed" },
+    { "time": "2026-07-06 09:20:00", "status": "confirmed" }
+  ]
+}`;
+    let formattedResult = "";
+    let currentJsonValue = null;
+    let collapsedPaths = new Set();
+    let parseTimer = 0;
+
+    input.addEventListener("input", () => {
+      updateInputLineNumbers();
+      window.clearTimeout(parseTimer);
+      parseTimer = window.setTimeout(parseAndRender, 120);
+    });
+
+    input.addEventListener("scroll", () => {
+      inputLines.scrollTop = input.scrollTop;
+    });
+
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Tab") {
+        event.preventDefault();
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        input.setRangeText("  ", start, end, "end");
+        updateInputLineNumbers();
+        parseAndRender();
+      }
+    });
+
+    sampleBtn.addEventListener("click", () => {
+      input.value = sample;
+      input.focus();
+      updateInputLineNumbers();
+      parseAndRender();
+    });
+
+    clearBtn.addEventListener("click", () => {
+      input.value = "";
+      input.focus();
+      updateInputLineNumbers();
+      renderEmpty();
+    });
+
+    pasteBtn.addEventListener("click", async () => {
+      if (!navigator.clipboard?.readText) {
+        setStatus("invalid", "当前浏览器不支持直接读取剪贴板");
+        return;
+      }
+
+      try {
+        input.value = await navigator.clipboard.readText();
+        input.focus();
+        updateInputLineNumbers();
+        parseAndRender();
+      } catch {
+        setStatus("invalid", "浏览器没有授权读取剪贴板");
+      }
+    });
+
+    copyBtn.addEventListener("click", async () => {
+      if (!formattedResult) {
+        setStatus("invalid", "没有可复制的解析结果");
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(formattedResult);
+        setStatus("valid", "已复制格式化后的 JSON");
+      } catch {
+        setStatus("invalid", "复制失败，请手动选择结果复制");
+      }
+    });
+
+    downloadBtn.addEventListener("click", () => {
+      if (!formattedResult) {
+        setStatus("invalid", "没有可下载的解析结果");
+        return;
+      }
+
+      const blob = new Blob([formattedResult], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "formatted.json";
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+
+    output.addEventListener("click", (event) => {
+      const button = event.target.closest(".fold-toggle");
+      if (!button || !output.contains(button) || currentJsonValue === null) {
+        return;
+      }
+
+      const path = button.dataset.path;
+      if (collapsedPaths.has(path)) {
+        collapsedPaths.delete(path);
+      } else {
+        collapsedPaths.add(path);
+      }
+      drawJsonTree(currentJsonValue);
+    });
+
+    function parseAndRender() {
+      const raw = input.value.trim();
+
+      if (!raw) {
+        renderEmpty();
+        return;
+      }
+
+      const result = parseJson(raw);
+
+      if (!result.ok) {
+        formattedResult = "";
+        currentJsonValue = null;
+        collapsedPaths.clear();
+        output.classList.add("hidden");
+        errorBox.classList.remove("hidden");
+        errorBox.textContent = result.message;
+        setStatus("invalid", "JSON 校验失败");
+        typeMetric.textContent = "类型：-";
+        sizeMetric.textContent = `大小：${formatBytes(new Blob([input.value]).size)}`;
+        lineMetric.textContent = `行数：${countLines(input.value)}`;
+        return;
+      }
+
+      formattedResult = JSON.stringify(result.value, null, 2);
+      currentJsonValue = result.value;
+      collapsedPaths.clear();
+      drawJsonTree(result.value);
+      errorBox.classList.add("hidden");
+      setStatus("valid", result.unescaped ? "JSON 合法，已格式化并去除外层转义" : "JSON 合法，已格式化");
+      typeMetric.textContent = `类型：${getJsonType(result.value)}`;
+      sizeMetric.textContent = `大小：${formatBytes(new Blob([formattedResult]).size)}`;
+      lineMetric.textContent = `行数：${countLines(formattedResult)}`;
+    }
+
+    function drawJsonTree(value) {
+      output.textContent = "";
+      output.classList.remove("placeholder", "hidden");
+      let lineNumber = 1;
+
+      const appendLine = (depth, buildContent) => {
+        const line = document.createElement("div");
+        line.className = "json-line";
+
+        const number = document.createElement("span");
+        number.className = "output-line-no";
+        number.textContent = lineNumber;
+        lineNumber += 1;
+
+        const content = document.createElement("span");
+        content.className = "json-content";
+        content.style.setProperty("--depth", depth);
+
+        const indent = document.createElement("span");
+        indent.className = "json-indent";
+        content.append(indent);
+        buildContent(content);
+
+        line.append(number, content);
+        output.append(line);
+      };
+
+      renderJsonNode(value, 0, null, [], false, appendLine);
+    }
+
+    function renderJsonNode(value, depth, key, path, trailingComma, appendLine) {
+      const pathId = JSON.stringify(path);
+      const isArray = Array.isArray(value);
+      const isObject = value !== null && typeof value === "object";
+
+      if (!isObject) {
+        appendLine(depth, (content) => {
+          appendKey(content, key);
+          appendPrimitive(content, value);
+          appendComma(content, trailingComma);
+        });
+        return;
+      }
+
+      const entries = isArray
+        ? value.map((item, index) => [String(index), item])
+        : Object.entries(value);
+      const open = isArray ? "[" : "{";
+      const close = isArray ? "]" : "}";
+
+      if (entries.length === 0) {
+        appendLine(depth, (content) => {
+          appendKey(content, key);
+          appendToken(content, "json-bracket", `${open}${close}`);
+          appendComma(content, trailingComma);
+        });
+        return;
+      }
+
+      if (collapsedPaths.has(pathId)) {
+        appendLine(depth, (content) => {
+          appendFoldButton(content, pathId, true);
+          appendKey(content, key);
+          appendToken(content, "json-bracket", `${open}...${close}`);
+          appendToken(content, "json-count", ` ${entries.length} 项`);
+          appendComma(content, trailingComma);
+        });
+        return;
+      }
+
+      appendLine(depth, (content) => {
+        appendFoldButton(content, pathId, false);
+        appendKey(content, key);
+        appendToken(content, "json-bracket", open);
+      });
+
+      entries.forEach(([entryKey, entryValue], index) => {
+        const childPath = path.concat(entryKey);
+        const childKey = isArray ? null : entryKey;
+        renderJsonNode(entryValue, depth + 1, childKey, childPath, index < entries.length - 1, appendLine);
+      });
+
+      appendLine(depth, (content) => {
+        appendToken(content, "json-bracket", close);
+        appendComma(content, trailingComma);
+      });
+    }
+
+    function appendFoldButton(parent, pathId, collapsed) {
+      const button = document.createElement("button");
+      button.className = "fold-toggle";
+      button.type = "button";
+      button.dataset.path = pathId;
+      button.title = collapsed ? "展开" : "折叠";
+      button.setAttribute("aria-label", collapsed ? "展开" : "折叠");
+      button.textContent = collapsed ? "▶" : "▼";
+      parent.append(button);
+    }
+
+    function appendKey(parent, key) {
+      if (key === null) {
+        return;
+      }
+
+      appendToken(parent, "json-key", `${JSON.stringify(key)}: `);
+    }
+
+    function appendPrimitive(parent, value) {
+      if (typeof value === "string") {
+        appendToken(parent, "json-string", JSON.stringify(value));
+        return;
+      }
+
+      if (typeof value === "number") {
+        appendToken(parent, "json-number", String(value));
+        return;
+      }
+
+      if (typeof value === "boolean") {
+        appendToken(parent, "json-boolean", String(value));
+        return;
+      }
+
+      appendToken(parent, "json-null", "null");
+    }
+
+    function appendComma(parent, enabled) {
+      if (enabled) {
+        appendToken(parent, "json-punctuation", ",");
+      }
+    }
+
+    function appendToken(parent, className, text) {
+      const token = document.createElement("span");
+      token.className = className;
+      token.textContent = text;
+      parent.append(token);
+    }
+
+    function parseJson(raw) {
+      const candidates = buildCandidates(raw);
+      let lastError = null;
+
+      for (const candidate of candidates) {
+        try {
+          const parsed = JSON.parse(candidate.text);
+          const normalized = unwrapJsonString(parsed, candidate.unescaped);
+          return { ok: true, value: normalized.value, unescaped: normalized.unescaped };
+        } catch (error) {
+          lastError = error;
+        }
+      }
+
+      return {
+        ok: false,
+        message: formatJsonError(lastError, raw)
+      };
+    }
+
+    function buildCandidates(raw) {
+      const text = raw.trim();
+      const candidates = [{ text, unescaped: false }];
+
+      if (isWrappedInQuotes(text)) {
+        try {
+          const unwrapped = JSON.parse(text);
+          if (typeof unwrapped === "string") {
+            candidates.push({ text: unwrapped.trim(), unescaped: true });
+          }
+        } catch {
+          // Keep the original parser error as the useful signal.
+        }
+      }
+
+      const quoteFixed = text.replace(/\\"/g, '"').replace(/\\\//g, "/");
+      if (quoteFixed !== text) {
+        candidates.push({ text: quoteFixed, unescaped: true });
+      }
+
+      const unicodeFixed = text.replace(/\\u([\dA-Fa-f]{4})/g, (_, code) => {
+        return String.fromCharCode(Number.parseInt(code, 16));
+      });
+      if (unicodeFixed !== text) {
+        candidates.push({ text: unicodeFixed, unescaped: true });
+      }
+
+      return dedupeCandidates(candidates);
+    }
+
+    function unwrapJsonString(value, wasUnescaped) {
+      let current = value;
+      let unescaped = wasUnescaped;
+
+      for (let i = 0; i < 4; i += 1) {
+        if (typeof current !== "string") {
+          break;
+        }
+
+        const text = current.trim();
+        if (!looksLikeJson(text)) {
+          break;
+        }
+
+        try {
+          current = JSON.parse(text);
+          unescaped = true;
+        } catch {
+          break;
+        }
+      }
+
+      return { value: current, unescaped };
+    }
+
+    function looksLikeJson(text) {
+      return (
+        (text.startsWith("{") && text.endsWith("}")) ||
+        (text.startsWith("[") && text.endsWith("]")) ||
+        isWrappedInQuotes(text)
+      );
+    }
+
+    function isWrappedInQuotes(text) {
+      return text.length >= 2 && text.startsWith('"') && text.endsWith('"');
+    }
+
+    function dedupeCandidates(candidates) {
+      const seen = new Set();
+      return candidates.filter((candidate) => {
+        if (seen.has(candidate.text)) {
+          return false;
+        }
+        seen.add(candidate.text);
+        return true;
+      });
+    }
+
+    function formatJsonError(error, source) {
+      const base = error?.message || "无法解析 JSON";
+      const position = extractErrorPosition(base);
+
+      if (position === null) {
+        return base;
+      }
+
+      const location = getLineColumn(source, position);
+      return `${base}\n位置：第 ${location.line} 行，第 ${location.column} 列`;
+    }
+
+    function extractErrorPosition(message) {
+      const match = message.match(/position\s+(\d+)/i);
+      return match ? Number(match[1]) : null;
+    }
+
+    function getLineColumn(text, position) {
+      const before = text.slice(0, position);
+      const lines = before.split(/\r\n|\r|\n/);
+      return {
+        line: lines.length,
+        column: lines[lines.length - 1].length + 1
+      };
+    }
+
+    function renderEmpty() {
+      formattedResult = "";
+      currentJsonValue = null;
+      collapsedPaths.clear();
+      output.textContent = "解析后的 JSON 会显示在这里。";
+      output.classList.add("placeholder");
+      output.classList.remove("hidden");
+      errorBox.classList.add("hidden");
+      setStatus("", "等待输入 JSON");
+      typeMetric.textContent = "类型：-";
+      sizeMetric.textContent = "大小：0 B";
+      lineMetric.textContent = "行数：0";
+    }
+
+    function updateInputLineNumbers() {
+      const lines = Math.max(1, countLines(input.value));
+      inputLines.textContent = Array.from({ length: lines }, (_, index) => index + 1).join("\n");
+      inputLines.scrollTop = input.scrollTop;
+    }
+
+    function setStatus(state, message) {
+      statusStrip.classList.remove("valid", "invalid");
+      if (state) {
+        statusStrip.classList.add(state);
+      }
+      statusText.textContent = message;
+    }
+
+    function getJsonType(value) {
+      if (Array.isArray(value)) {
+        return "数组";
+      }
+      if (value === null) {
+        return "null";
+      }
+
+      const types = {
+        object: "对象",
+        string: "字符串",
+        number: "数字",
+        boolean: "布尔值"
+      };
+      return types[typeof value] || typeof value;
+    }
+
+    function countLines(text) {
+      return text ? text.split(/\r\n|\r|\n/).length : 0;
+    }
+
+    function formatBytes(bytes) {
+      if (bytes < 1024) {
+        return `${bytes} B`;
+      }
+
+      if (bytes < 1024 * 1024) {
+        return `${(bytes / 1024).toFixed(1)} KB`;
+      }
+
+      return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+    }
+
+    updateInputLineNumbers();
+    renderEmpty();
+  </script>
+</body>
+</html>
