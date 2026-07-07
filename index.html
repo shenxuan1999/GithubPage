@@ -545,9 +545,97 @@
       line-height: 1.72;
     }
 
+    .folder-library {
+      display: grid;
+      gap: 14px;
+    }
+
+    .folder-window {
+      overflow: hidden;
+    }
+
     .folder-list {
       display: grid;
       gap: 18px;
+    }
+
+    .folder-list.is-sliding {
+      display: flex;
+      gap: 0;
+      align-items: stretch;
+      transform: translate3d(0, 0, 0);
+      transition: transform 560ms cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: transform;
+    }
+
+    .folder-page {
+      min-width: 100%;
+      flex: 0 0 100%;
+      display: grid;
+      gap: 18px;
+    }
+
+    .library-pagination {
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .library-arrow {
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: var(--muted-strong);
+      background: rgba(255, 255, 255, 0.055);
+      cursor: pointer;
+      transition: border-color 160ms ease, color 160ms ease, background 160ms ease, transform 160ms ease;
+    }
+
+    .library-arrow:hover:not(:disabled),
+    .library-arrow:focus-visible:not(:disabled) {
+      border-color: rgba(255, 255, 255, 0.34);
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    .library-arrow:disabled {
+      opacity: 0.38;
+      cursor: default;
+    }
+
+    .library-arrow svg {
+      width: 17px;
+      height: 17px;
+      stroke-width: 2.3;
+    }
+
+    .library-pages {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-width: 34px;
+    }
+
+    .library-page-text {
+      min-width: 42px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      font-family: var(--mono);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .folder-list.is-sliding {
+        transition: none;
+      }
     }
 
     .folder-group {
@@ -1117,11 +1205,13 @@
           <p class="section-kicker">Tool library</p>
           <h2 id="tools-title" class="section-title">工具入口</h2>
         </div>
-        <p class="section-copy">按文件夹分成四组展示，每组一行，默认露出 3 张小卡片，左右切换时按 3 张一页替换。</p>
+        <p class="section-copy">每屏固定展示四个文件夹分组，每组一行；分组内默认露出 3 张小卡片，左右切换时按 3 张一页替换。</p>
       </div>
 
-      <div class="folder-list" data-folder-library>
-        <section class="folder-group" data-folder-group data-folder-name="Json" aria-labelledby="folder-json-title">
+      <div class="folder-library" data-folder-library>
+        <div class="folder-window" data-library-window>
+          <div class="folder-list" data-folder-track>
+            <section class="folder-group" data-folder-group data-folder-name="Json" aria-labelledby="folder-json-title">
           <div class="folder-head">
             <div class="folder-meta">
               <span class="folder-label">/Json</span>
@@ -1417,7 +1507,26 @@
 
           </div>
           <div class="folder-pages" data-folder-pages aria-label="Jwt 卡片分页"></div>
-        </section>
+            </section>
+          </div>
+        </div>
+
+        <div class="library-pagination" data-library-pagination aria-label="文件夹分组分页">
+          <button class="library-arrow" type="button" data-library-prev aria-label="上一组文件夹">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <path d="m15 18-6-6 6-6"></path>
+            </svg>
+          </button>
+          <div class="library-pages" data-library-pages></div>
+          <span class="library-page-text" data-library-page-text>1 / 1</span>
+          <button class="library-arrow" type="button" data-library-next aria-label="下一组文件夹">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <path d="m9 18 6-6-6-6"></path>
+            </svg>
+          </button>
+        </div>
       </div>
     </section>
 
@@ -1434,12 +1543,12 @@
         <div class="workflow-card">
           <span>01</span>
           <h3>文件夹分组</h3>
-          <p>根目录首页按 Base64、Cron、Json、Jwt 四个文件夹拆成四行。</p>
+          <p>根目录首页按文件夹拆成分组，每屏最多展示四行。</p>
         </div>
         <div class="workflow-card">
           <span>02</span>
-          <h3>三张一页</h3>
-          <p>每组默认显示 3 张卡片，左右箭头和分页点同步切换。</p>
+          <h3>双层分页</h3>
+          <p>外层按四个分组滑动，组内按 3 张卡片切换。</p>
         </div>
         <div class="workflow-card">
           <span>03</span>
@@ -1457,9 +1566,256 @@
 
   <script>
     (() => {
-      const pageSize = 3;
+      const repoOwner = "shenxuan1999";
+      const repoName = "GithubPage";
+      const apiRoot = `https://api.github.com/repos/${repoOwner}/${repoName}/contents`;
+      const cardPageSize = 3;
+      const folderPageSize = 4;
+      const library = document.querySelector("[data-folder-library]");
 
-      document.querySelectorAll("[data-folder-group]").forEach((group) => {
+      if (!library) {
+        return;
+      }
+
+      const track = library.querySelector("[data-folder-track]");
+      const initialGroups = Array.from(track.children).filter((child) => child.matches("[data-folder-group]"));
+
+      const sortByName = (items) => {
+        return [...items].sort((first, second) => {
+          return first.name.localeCompare(second.name, "zh-Hans-CN", {
+            numeric: true,
+            sensitivity: "base"
+          });
+        });
+      };
+
+      const cleanText = (value) => {
+        return (value || "").replace(/\s+/g, " ").trim();
+      };
+
+      const prettifyName = (value) => {
+        return value
+          .replace(/\.html$/i, "")
+          .replace(/[-_]+/g, " ")
+          .replace(/\b\w/g, (letter) => letter.toUpperCase());
+      };
+
+      const createSvg = (paths) => {
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("fill", "none");
+        svg.setAttribute("stroke", "currentColor");
+        svg.setAttribute("stroke-linecap", "round");
+        svg.setAttribute("stroke-linejoin", "round");
+        svg.setAttribute("aria-hidden", "true");
+
+        paths.forEach((definition) => {
+          const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          path.setAttribute("d", definition);
+          svg.append(path);
+        });
+
+        return svg;
+      };
+
+      const createArrowIcon = (direction) => {
+        return createSvg(direction === "left" ? ["m15 18-6-6 6-6"] : ["m9 18 6-6-6-6"]);
+      };
+
+      const createExternalIcon = () => {
+        return createSvg(["M5 12h14", "m13 6 6 6-6 6"]);
+      };
+
+      const createToolIcon = () => {
+        return createSvg(["M4 4h16v16H4z", "M8 8h8", "M8 12h5", "M8 16h8"]);
+      };
+
+      const createButton = (className, label, icon, hookName) => {
+        const button = document.createElement("button");
+        button.className = className;
+        button.type = "button";
+        button.dataset[hookName] = "";
+        button.setAttribute("aria-label", label);
+        button.append(icon);
+        return button;
+      };
+
+      const createTag = (text) => {
+        const tag = document.createElement("span");
+        tag.className = "tag";
+        tag.textContent = text;
+        return tag;
+      };
+
+      const createToolCard = (tool) => {
+        const card = document.createElement("a");
+        card.className = "tool-card is-live";
+        card.dataset.folderCard = "";
+        card.href = tool.href;
+
+        const content = document.createElement("span");
+        const icon = document.createElement("span");
+        icon.className = "card-icon";
+        icon.setAttribute("aria-hidden", "true");
+        icon.append(createToolIcon());
+
+        const title = document.createElement("h3");
+        title.textContent = tool.title;
+
+        const description = document.createElement("p");
+        description.textContent = tool.description;
+
+        const tags = document.createElement("span");
+        tags.className = "tag-row";
+        tool.tags.forEach((tag) => tags.append(createTag(tag)));
+
+        content.append(icon, title, description, tags);
+
+        const bottom = document.createElement("span");
+        bottom.className = "card-bottom";
+        bottom.append("打开工具", createExternalIcon());
+
+        card.append(content, bottom);
+        return card;
+      };
+
+      const createFolderGroup = (folder) => {
+        const group = document.createElement("section");
+        const titleId = `folder-${folder.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-title`;
+
+        group.className = "folder-group";
+        group.dataset.folderGroup = "";
+        group.dataset.folderName = folder.name;
+        group.setAttribute("aria-labelledby", titleId);
+
+        const head = document.createElement("div");
+        head.className = "folder-head";
+
+        const meta = document.createElement("div");
+        meta.className = "folder-meta";
+
+        const label = document.createElement("span");
+        label.className = "folder-label";
+        label.textContent = `/${folder.name}`;
+
+        const titleRow = document.createElement("div");
+        titleRow.className = "folder-title-row";
+
+        const title = document.createElement("h3");
+        title.id = titleId;
+        title.className = "folder-title";
+        title.textContent = `${folder.name} 工具`;
+
+        const count = document.createElement("span");
+        count.className = "folder-count";
+        count.textContent = `${folder.tools.length} 张卡片`;
+
+        titleRow.append(title, count);
+
+        const description = document.createElement("p");
+        description.className = "folder-description";
+        description.textContent = `${folder.name} 文件夹下的 HTML 工具入口。`;
+
+        meta.append(label, titleRow, description);
+
+        const controls = document.createElement("div");
+        controls.className = "folder-controls";
+        controls.append(
+          createButton("folder-arrow", `${folder.name} 上一页`, createArrowIcon("left"), "folderPrev"),
+          createButton("folder-arrow", `${folder.name} 下一页`, createArrowIcon("right"), "folderNext")
+        );
+
+        head.append(meta, controls);
+
+        const cards = document.createElement("div");
+        cards.className = "folder-cards";
+        cards.dataset.folderCards = "";
+        folder.tools.forEach((tool) => cards.append(createToolCard(tool)));
+
+        const pages = document.createElement("div");
+        pages.className = "folder-pages";
+        pages.dataset.folderPages = "";
+        pages.setAttribute("aria-label", `${folder.name} 卡片分页`);
+
+        group.append(head, cards, pages);
+        return group;
+      };
+
+      const readToolPage = async (folderName, file) => {
+        let title = file.name.toLowerCase() === "index.html" ? `${folderName} 工具` : prettifyName(file.name);
+        let description = `${folderName} 文件夹下的 HTML 工具。`;
+
+        try {
+          const response = await fetch(file.download_url, { cache: "no-store" });
+
+          if (response.ok) {
+            const html = await response.text();
+            const documentPreview = new DOMParser().parseFromString(html, "text/html");
+            const heading = cleanText(documentPreview.querySelector("h1")?.textContent);
+            const pageTitle = cleanText(documentPreview.querySelector("title")?.textContent);
+            const subtitle = cleanText(
+              documentPreview.querySelector(".subtitle")?.textContent ||
+              documentPreview.querySelector('meta[name="description"]')?.content
+            );
+
+            title = heading || pageTitle || title;
+            description = subtitle || description;
+          }
+        } catch (error) {
+          title = title || prettifyName(file.name);
+        }
+
+        return {
+          title,
+          description,
+          href: `${encodeURIComponent(folderName)}/${encodeURIComponent(file.name)}`,
+          tags: [folderName, file.name.toLowerCase() === "index.html" ? "Index" : "HTML"]
+        };
+      };
+
+      const discoverFolders = async () => {
+        const rootResponse = await fetch(apiRoot, { cache: "no-store" });
+
+        if (!rootResponse.ok) {
+          throw new Error("Repository contents unavailable");
+        }
+
+        const rootItems = await rootResponse.json();
+        const folders = sortByName(rootItems.filter((item) => item.type === "dir" && !item.name.startsWith(".")));
+        const discovered = await Promise.all(folders.map(async (folder) => {
+          const folderResponse = await fetch(folder.url, { cache: "no-store" });
+
+          if (!folderResponse.ok) {
+            return null;
+          }
+
+          const folderItems = await folderResponse.json();
+          const htmlFiles = sortByName(folderItems.filter((item) => {
+            return item.type === "file" && /\.html$/i.test(item.name) && item.download_url;
+          })).sort((first, second) => {
+            if (first.name.toLowerCase() === "index.html") {
+              return -1;
+            }
+
+            if (second.name.toLowerCase() === "index.html") {
+              return 1;
+            }
+
+            return 0;
+          });
+
+          if (!htmlFiles.length) {
+            return null;
+          }
+
+          const tools = await Promise.all(htmlFiles.map((file) => readToolPage(folder.name, file)));
+          return { name: folder.name, tools };
+        }));
+
+        return discovered.filter(Boolean);
+      };
+
+      const initializeFolderGroup = (group) => {
         const cardsContainer = group.querySelector("[data-folder-cards]");
         const cards = Array.from(group.querySelectorAll("[data-folder-card]"));
         const previousButton = group.querySelector("[data-folder-prev]");
@@ -1467,12 +1823,12 @@
         const pages = group.querySelector("[data-folder-pages]");
         const count = group.querySelector(".folder-count");
         const folderName = group.dataset.folderName || "工具";
-        const pageCount = Math.max(1, Math.ceil(cards.length / pageSize));
+        const pageCount = Math.max(1, Math.ceil(cards.length / cardPageSize));
         let currentPage = 0;
 
         const render = () => {
-          const start = currentPage * pageSize;
-          const end = start + pageSize;
+          const start = currentPage * cardPageSize;
+          const end = start + cardPageSize;
           let visibleCount = 0;
 
           cards.forEach((card, index) => {
@@ -1484,7 +1840,7 @@
 
           cardsContainer.querySelectorAll("[data-folder-empty]").forEach((card) => card.remove());
 
-          for (let index = visibleCount; index < pageSize; index += 1) {
+          for (let index = visibleCount; index < cardPageSize; index += 1) {
             const emptyCard = document.createElement("div");
             emptyCard.className = "tool-card empty-card";
             emptyCard.dataset.folderEmpty = "";
@@ -1531,7 +1887,93 @@
         previousButton.addEventListener("click", () => move(-1));
         nextButton.addEventListener("click", () => move(1));
         render();
-      });
+      };
+
+      const initializeLibrary = (groups) => {
+        const previousButton = library.querySelector("[data-library-prev]");
+        const nextButton = library.querySelector("[data-library-next]");
+        const pageDots = library.querySelector("[data-library-pages]");
+        const pageText = library.querySelector("[data-library-page-text]");
+        const groupPages = [];
+        const pageCount = Math.max(1, Math.ceil(groups.length / folderPageSize));
+        let currentPage = 0;
+
+        groups.forEach((group, index) => {
+          if (index % folderPageSize === 0) {
+            const page = document.createElement("div");
+            page.className = "folder-page";
+            groupPages.push(page);
+          }
+
+          groupPages[groupPages.length - 1].append(group);
+        });
+
+        track.replaceChildren(...groupPages);
+        track.classList.add("is-sliding");
+
+        const render = () => {
+          track.style.transform = `translate3d(-${currentPage * 100}%, 0, 0)`;
+          previousButton.disabled = pageCount <= 1;
+          nextButton.disabled = pageCount <= 1;
+          pageDots.replaceChildren();
+          pageText.textContent = `${currentPage + 1} / ${pageCount}`;
+
+          for (let index = 0; index < pageCount; index += 1) {
+            const dot = document.createElement("button");
+            dot.type = "button";
+            dot.className = "page-dot";
+            dot.setAttribute("aria-label", `文件夹分组第 ${index + 1} 页`);
+
+            if (index === currentPage) {
+              dot.setAttribute("aria-current", "true");
+            }
+
+            dot.addEventListener("click", () => {
+              currentPage = index;
+              render();
+            });
+
+            pageDots.append(dot);
+          }
+        };
+
+        const move = (direction) => {
+          if (pageCount <= 1) {
+            return;
+          }
+
+          currentPage = (currentPage + direction + pageCount) % pageCount;
+          render();
+        };
+
+        previousButton.addEventListener("click", () => move(-1));
+        nextButton.addEventListener("click", () => move(1));
+        render();
+      };
+
+      const boot = async () => {
+        let groups = initialGroups;
+
+        try {
+          const folders = await discoverFolders();
+
+          if (folders.length) {
+            groups = folders.map(createFolderGroup);
+          }
+        } catch (error) {
+          groups = initialGroups;
+        }
+
+        if (!groups.length) {
+          return;
+        }
+
+        track.replaceChildren(...groups);
+        groups.forEach(initializeFolderGroup);
+        initializeLibrary(groups);
+      };
+
+      boot();
     })();
   </script>
 </body>
