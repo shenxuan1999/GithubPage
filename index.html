@@ -545,10 +545,117 @@
       line-height: 1.72;
     }
 
-    .tools-grid {
+    .folder-list {
       display: grid;
-      grid-template-columns: 1.12fr 0.88fr;
+      gap: 18px;
+    }
+
+    .folder-group {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .folder-head {
+      margin-bottom: 14px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
       gap: 16px;
+    }
+
+    .folder-meta {
+      min-width: 0;
+    }
+
+    .folder-label {
+      min-height: 24px;
+      padding: 0 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      color: var(--cyan);
+      background: rgba(45, 212, 191, 0.08);
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .folder-title-row {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .folder-title {
+      font-size: 22px;
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    .folder-count {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .folder-description {
+      margin-top: 7px;
+      max-width: 640px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.62;
+    }
+
+    .folder-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+
+    .folder-arrow {
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: var(--muted-strong);
+      background: rgba(255, 255, 255, 0.055);
+      cursor: pointer;
+      transition: border-color 160ms ease, color 160ms ease, background 160ms ease, transform 160ms ease;
+    }
+
+    .folder-arrow:hover:not(:disabled),
+    .folder-arrow:focus-visible:not(:disabled) {
+      border-color: rgba(255, 255, 255, 0.34);
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    .folder-arrow:disabled {
+      opacity: 0.36;
+      cursor: default;
+    }
+
+    .folder-arrow svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2.3;
+    }
+
+    .folder-cards {
+      min-height: 190px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
     }
 
     .tool-card {
@@ -557,21 +664,25 @@
       background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035)),
         var(--panel);
-      min-height: 250px;
-      padding: 20px;
+      min-height: 190px;
+      padding: 16px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      gap: 22px;
+      gap: 16px;
       overflow: hidden;
       position: relative;
       transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
     }
 
+    .tool-card[hidden] {
+      display: none;
+    }
+
     .tool-card::after {
       content: "";
       position: absolute;
-      inset: auto 18px 0;
+      inset: auto 14px 0;
       height: 1px;
       background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.46), transparent);
       opacity: 0.5;
@@ -587,18 +698,27 @@
       outline: none;
     }
 
-    .tool-card.featured {
-      min-height: 372px;
-      grid-row: span 2;
+    .tool-card.is-live {
       background:
-        linear-gradient(145deg, rgba(47, 125, 246, 0.18), transparent 42%),
+        linear-gradient(145deg, rgba(47, 125, 246, 0.14), transparent 48%),
         linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.035)),
         var(--panel);
     }
 
+    .empty-card {
+      border-style: dashed;
+      background: rgba(255, 255, 255, 0.018);
+      box-shadow: none;
+      pointer-events: none;
+    }
+
+    .empty-card::after {
+      display: none;
+    }
+
     .card-icon {
-      width: 44px;
-      height: 44px;
+      width: 38px;
+      height: 38px;
       border: 1px solid var(--line-strong);
       border-radius: 8px;
       display: grid;
@@ -609,23 +729,23 @@
     }
 
     .card-icon svg {
-      width: 23px;
-      height: 23px;
+      width: 20px;
+      height: 20px;
       stroke-width: 2.1;
     }
 
     .tool-card h3 {
-      margin-top: 18px;
-      font-size: 24px;
+      margin-top: 13px;
+      font-size: 19px;
       line-height: 1.16;
       letter-spacing: 0;
     }
 
     .tool-card p {
-      margin-top: 10px;
+      margin-top: 8px;
       color: var(--muted);
-      font-size: 14px;
-      line-height: 1.7;
+      font-size: 13px;
+      line-height: 1.58;
     }
 
     .card-bottom {
@@ -634,7 +754,7 @@
       justify-content: space-between;
       gap: 12px;
       color: var(--muted-strong);
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
     }
 
@@ -647,27 +767,52 @@
 
     .tag-row {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
-      margin-top: 18px;
+      margin-top: 12px;
     }
 
     .tag {
-      min-height: 28px;
-      padding: 0 9px;
+      min-height: 24px;
+      padding: 0 8px;
       border: 1px solid var(--line);
       border-radius: 8px;
       display: inline-flex;
       align-items: center;
       color: var(--muted);
       background: rgba(255, 255, 255, 0.04);
-      font-size: 12px;
+      font-size: 11px;
       white-space: nowrap;
     }
 
-    .stack {
-      display: grid;
-      gap: 16px;
+    .folder-pages {
+      min-height: 22px;
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .page-dot {
+      width: 8px;
+      height: 8px;
+      padding: 0;
+      border: 0;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.24);
+      cursor: pointer;
+      transition: width 160ms ease, background 160ms ease;
+    }
+
+    .page-dot[aria-current="true"] {
+      width: 22px;
+      background: var(--cyan);
+    }
+
+    .page-dot:focus-visible {
+      outline: 2px solid rgba(45, 212, 191, 0.62);
+      outline-offset: 3px;
     }
 
     .workflow {
@@ -733,12 +878,8 @@
         max-width: 760px;
       }
 
-      .tools-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .tool-card.featured {
-        grid-row: auto;
+      .folder-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
       .workflow {
@@ -817,9 +958,25 @@
         font-size: 31px;
       }
 
-      .tool-card,
-      .tool-card.featured {
-        min-height: 236px;
+      .folder-group {
+        padding: 14px;
+      }
+
+      .folder-head {
+        flex-direction: column;
+      }
+
+      .folder-controls {
+        width: 100%;
+        justify-content: flex-end;
+      }
+
+      .folder-cards {
+        grid-template-columns: 1fr;
+      }
+
+      .tool-card {
+        min-height: 178px;
       }
     }
   </style>
@@ -827,7 +984,7 @@
 
 <body>
   <header class="nav" aria-label="站点导航">
-    <a class="brand" href="https://shenxuan1999.github.io/GithubPage/" aria-label="GithubPage 首页">
+    <a class="brand" href="index.html" aria-label="GithubPage 首页">
       <span class="brand-mark" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
           <path d="M4 7h16"></path>
@@ -842,7 +999,7 @@
     <nav class="nav-links" aria-label="页面导航">
       <a class="nav-link" href="#tools">Tools</a>
       <a class="nav-link" href="#workflow">Structure</a>
-      <a class="nav-cta" href="https://shenxuan1999.github.io/GithubPage/json-parser/">
+      <a class="nav-cta" href="Json/index.html">
         JSON Parser
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
           aria-hidden="true">
@@ -860,7 +1017,7 @@
         <h1 class="hero-title">把高频工具，收进一个足够干净的入口。</h1>
         <p class="hero-copy">一个面向日常开发、调试和数据整理的轻量工具首页。入口保持克制，工具保持独立，后续新增页面也能自然接入。</p>
         <div class="hero-actions">
-          <a class="button primary" href="https://shenxuan1999.github.io/GithubPage/json-parser/">
+          <a class="button primary" href="Json/index.html">
             打开 JSON 解析器
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
               aria-hidden="true">
@@ -882,8 +1039,8 @@
 
         <div class="hero-meta" aria-label="站点概览">
           <div class="meta-item">
-            <strong>01</strong>
-            <span>当前可用工具</span>
+            <strong>04</strong>
+            <span>当前文件夹分组</span>
           </div>
           <div class="meta-item">
             <strong>∞</strong>
@@ -903,7 +1060,7 @@
             <span></span>
             <span></span>
           </div>
-          <span class="frame-url">shenxuan1999.github.io/GithubPage/json-parser/</span>
+          <span class="frame-url">shenxuan1999.github.io/GithubPage/Json/</span>
         </div>
         <div class="frame-body">
           <div class="tool-status">
@@ -960,73 +1117,307 @@
           <p class="section-kicker">Tool library</p>
           <h2 id="tools-title" class="section-title">工具入口</h2>
         </div>
-        <p class="section-copy">当前先接入 JSON 解析器，其他高频页面可以继续追加到这里，形成稳定的个人工具库。</p>
+        <p class="section-copy">按文件夹分成四组展示，每组一行，默认露出 3 张小卡片，左右切换时按 3 张一页替换。</p>
       </div>
 
-      <div class="tools-grid">
-        <a class="tool-card featured" href="https://shenxuan1999.github.io/GithubPage/json-parser/">
-          <span>
-            <span class="card-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                <path d="m8 9-3 3 3 3"></path>
-                <path d="m16 9 3 3-3 3"></path>
-                <path d="m14 5-4 14"></path>
-              </svg>
-            </span>
-            <h3>JSON 解析器</h3>
-            <p>面向接口调试和数据整理的在线 JSON 工具，支持格式化、校验、压缩和复制。</p>
-            <span class="tag-row">
-              <span class="tag">Format</span>
-              <span class="tag">Validate</span>
-              <span class="tag">Minify</span>
-              <span class="tag">Copy</span>
-            </span>
-          </span>
-          <span class="card-bottom">
-            Launch tool
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-              aria-hidden="true">
-              <path d="M5 12h14"></path>
-              <path d="m13 6 6 6-6 6"></path>
-            </svg>
-          </span>
-        </a>
-
-        <div class="stack">
-          <div class="tool-card">
-            <span>
-              <span class="card-icon" aria-hidden="true">
+      <div class="folder-list" data-folder-library>
+        <section class="folder-group" data-folder-group data-folder-name="Json" aria-labelledby="folder-json-title">
+          <div class="folder-head">
+            <div class="folder-meta">
+              <span class="folder-label">/Json</span>
+              <div class="folder-title-row">
+                <h3 id="folder-json-title" class="folder-title">Json 工具</h3>
+                <span class="folder-count">2 张卡片</span>
+              </div>
+              <p class="folder-description">JSON 查看、格式转换和结构辅助工具集中放在这一组。</p>
+            </div>
+            <div class="folder-controls">
+              <button class="folder-arrow" type="button" data-folder-prev aria-label="Json 上一页">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
-                  stroke-linejoin="round">
-                  <path d="M4 7h16"></path>
-                  <path d="M4 12h10"></path>
-                  <path d="M4 17h13"></path>
+                  stroke-linejoin="round" aria-hidden="true">
+                  <path d="m15 18-6-6 6-6"></path>
                 </svg>
-              </span>
-              <h3>Text Utilities</h3>
-              <p>预留给文本清理、大小写转换、字符统计等轻量工具。</p>
-            </span>
-            <span class="card-bottom">Planned</span>
+              </button>
+              <button class="folder-arrow" type="button" data-folder-next aria-label="Json 下一页">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                  stroke-linejoin="round" aria-hidden="true">
+                  <path d="m9 18 6-6-6-6"></path>
+                </svg>
+              </button>
+            </div>
           </div>
 
-          <div class="tool-card">
-            <span>
-              <span class="card-icon" aria-hidden="true">
+          <div class="folder-cards" data-folder-cards>
+            <a class="tool-card is-live" data-folder-card href="Json/index.html">
+              <span>
+                <span class="card-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="m8 9-3 3 3 3"></path>
+                    <path d="m16 9 3 3-3 3"></path>
+                    <path d="m14 5-4 14"></path>
+                  </svg>
+                </span>
+                <h3>JSON 解析器</h3>
+                <p>格式化、校验、压缩、下载和复制 JSON，适合接口调试。</p>
+                <span class="tag-row">
+                  <span class="tag">Live</span>
+                  <span class="tag">Format</span>
+                  <span class="tag">Copy</span>
+                </span>
+              </span>
+              <span class="card-bottom">
+                打开工具
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
-                  stroke-linejoin="round">
-                  <path d="M4 18V6"></path>
-                  <path d="M8 18v-8"></path>
-                  <path d="M12 18V9"></path>
-                  <path d="M16 18v-5"></path>
-                  <path d="M20 18V8"></path>
+                  stroke-linejoin="round" aria-hidden="true">
+                  <path d="M5 12h14"></path>
+                  <path d="m13 6 6 6-6 6"></path>
                 </svg>
               </span>
-              <h3>Data Tools</h3>
-              <p>预留给数据预览、字段映射、格式转换等页面。</p>
-            </span>
-            <span class="card-bottom">Planned</span>
+            </a>
+
+            <a class="tool-card is-live" data-folder-card
+              href="Json/ToCsharp.html">
+              <span>
+                <span class="card-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M16 18 22 12 16 6"></path>
+                    <path d="M8 6 2 12 8 18"></path>
+                    <path d="M11 4 13 20"></path>
+                  </svg>
+                </span>
+                <h3>JSON 转 C# 类</h3>
+                <p>识别 JSON 结构，生成 Pascal 命名的 C# 类和属性注释。</p>
+                <span class="tag-row">
+                  <span class="tag">Live</span>
+                  <span class="tag">C#</span>
+                  <span class="tag">Class</span>
+                </span>
+              </span>
+              <span class="card-bottom">
+                打开工具
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                  stroke-linejoin="round" aria-hidden="true">
+                  <path d="M5 12h14"></path>
+                  <path d="m13 6 6 6-6 6"></path>
+                </svg>
+              </span>
+            </a>
+
+
+
+
+
+
+
+
           </div>
-        </div>
+          <div class="folder-pages" data-folder-pages aria-label="Json 卡片分页"></div>
+        </section>
+
+        <section class="folder-group" data-folder-group data-folder-name="Base64" aria-labelledby="folder-base64-title">
+          <div class="folder-head">
+            <div class="folder-meta">
+              <span class="folder-label">/Base64</span>
+              <div class="folder-title-row">
+                <h3 id="folder-base64-title" class="folder-title">Base64 工具</h3>
+                <span class="folder-count">1 张卡片</span>
+              </div>
+              <p class="folder-description">编码、解码和图片预览相关入口放在 Base64 文件夹下。</p>
+            </div>
+            <div class="folder-controls">
+              <button class="folder-arrow" type="button" data-folder-prev aria-label="Base64 上一页">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                  stroke-linejoin="round" aria-hidden="true">
+                  <path d="m15 18-6-6 6-6"></path>
+                </svg>
+              </button>
+              <button class="folder-arrow" type="button" data-folder-next aria-label="Base64 下一页">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                  stroke-linejoin="round" aria-hidden="true">
+                  <path d="m9 18 6-6-6-6"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="folder-cards" data-folder-cards>
+            <a class="tool-card is-live" data-folder-card href="Base64/index.html">
+              <span>
+                <span class="card-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <rect width="18" height="14" x="3" y="5" rx="2"></rect>
+                    <path d="m3 15 4-4 4 4 2-2 5 5"></path>
+                    <path d="M14 9h.01"></path>
+                  </svg>
+                </span>
+                <h3>Base64 转图片</h3>
+                <p>粘贴 Base64 或 data:image 内容，自动识别类型并预览图片。</p>
+                <span class="tag-row">
+                  <span class="tag">Live</span>
+                  <span class="tag">Image</span>
+                  <span class="tag">Decode</span>
+                </span>
+              </span>
+              <span class="card-bottom">
+                打开工具
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                  stroke-linejoin="round" aria-hidden="true">
+                  <path d="M5 12h14"></path>
+                  <path d="m13 6 6 6-6 6"></path>
+                </svg>
+              </span>
+            </a>
+
+
+
+
+
+
+
+
+
+
+          </div>
+          <div class="folder-pages" data-folder-pages aria-label="Base64 卡片分页"></div>
+        </section>
+
+        <section class="folder-group" data-folder-group data-folder-name="Cron" aria-labelledby="folder-cron-title">
+          <div class="folder-head">
+            <div class="folder-meta">
+              <span class="folder-label">/Cron</span>
+              <div class="folder-title-row">
+                <h3 id="folder-cron-title" class="folder-title">Cron 工具</h3>
+                <span class="folder-count">1 张卡片</span>
+              </div>
+              <p class="folder-description">表达式生成、预览和模板入口归到 Cron 文件夹。</p>
+            </div>
+            <div class="folder-controls">
+              <button class="folder-arrow" type="button" data-folder-prev aria-label="Cron 上一页">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                  stroke-linejoin="round" aria-hidden="true">
+                  <path d="m15 18-6-6 6-6"></path>
+                </svg>
+              </button>
+              <button class="folder-arrow" type="button" data-folder-next aria-label="Cron 下一页">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                  stroke-linejoin="round" aria-hidden="true">
+                  <path d="m9 18 6-6-6-6"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="folder-cards" data-folder-cards>
+            <a class="tool-card is-live" data-folder-card href="Cron/index.html">
+              <span>
+                <span class="card-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M12 7v5l3 2"></path>
+                  </svg>
+                </span>
+                <h3>Cron 表达式生成器</h3>
+                <p>生成 Quartz 风格 Cron，并预览最近运行时间。</p>
+                <span class="tag-row">
+                  <span class="tag">Live</span>
+                  <span class="tag">Quartz</span>
+                  <span class="tag">Preview</span>
+                </span>
+              </span>
+              <span class="card-bottom">
+                打开工具
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                  stroke-linejoin="round" aria-hidden="true">
+                  <path d="M5 12h14"></path>
+                  <path d="m13 6 6 6-6 6"></path>
+                </svg>
+              </span>
+            </a>
+
+
+
+
+
+
+
+
+
+
+          </div>
+          <div class="folder-pages" data-folder-pages aria-label="Cron 卡片分页"></div>
+        </section>
+
+        <section class="folder-group" data-folder-group data-folder-name="Jwt" aria-labelledby="folder-jwt-title">
+          <div class="folder-head">
+            <div class="folder-meta">
+              <span class="folder-label">/Jwt</span>
+              <div class="folder-title-row">
+                <h3 id="folder-jwt-title" class="folder-title">Jwt 工具</h3>
+                <span class="folder-count">1 张卡片</span>
+              </div>
+              <p class="folder-description">Token 解码、Claims 检查和 Base64Url 辅助工具集中到 Jwt 文件夹。</p>
+            </div>
+            <div class="folder-controls">
+              <button class="folder-arrow" type="button" data-folder-prev aria-label="Jwt 上一页">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                  stroke-linejoin="round" aria-hidden="true">
+                  <path d="m15 18-6-6 6-6"></path>
+                </svg>
+              </button>
+              <button class="folder-arrow" type="button" data-folder-next aria-label="Jwt 下一页">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                  stroke-linejoin="round" aria-hidden="true">
+                  <path d="m9 18 6-6-6-6"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="folder-cards" data-folder-cards>
+            <a class="tool-card is-live" data-folder-card href="Jwt/index.html">
+              <span>
+                <span class="card-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M12 3 4 7v6c0 5 3.5 7.5 8 8 4.5-.5 8-3 8-8V7l-8-4Z"></path>
+                    <path d="M9 12h6"></path>
+                    <path d="M12 9v6"></path>
+                  </svg>
+                </span>
+                <h3>JWT 解析器</h3>
+                <p>解析 Header、Payload 和 Signature，并检查 exp 过期状态。</p>
+                <span class="tag-row">
+                  <span class="tag">Live</span>
+                  <span class="tag">JWT</span>
+                  <span class="tag">Decode</span>
+                </span>
+              </span>
+              <span class="card-bottom">
+                打开工具
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                  stroke-linejoin="round" aria-hidden="true">
+                  <path d="M5 12h14"></path>
+                  <path d="m13 6 6 6-6 6"></path>
+                </svg>
+              </span>
+            </a>
+
+
+
+
+
+
+
+
+
+
+          </div>
+          <div class="folder-pages" data-folder-pages aria-label="Jwt 卡片分页"></div>
+        </section>
       </div>
     </section>
 
@@ -1034,26 +1425,26 @@
       <div class="section-head">
         <div>
           <p class="section-kicker">Structure</p>
-          <h2 id="workflow-title" class="section-title">保持首页轻，工具页独立。</h2>
+          <h2 id="workflow-title" class="section-title">文件夹分组，工具页独立。</h2>
         </div>
-        <p class="section-copy">首页只承担发现和跳转，不把单个工具的复杂操作塞进同一个页面。</p>
+        <p class="section-copy">首页只承担分组发现和跳转，每个具体工具继续留在自己的文件夹页面里。</p>
       </div>
 
       <div class="workflow">
         <div class="workflow-card">
           <span>01</span>
-          <h3>统一入口</h3>
-          <p>所有工具从根目录首页进入，链接使用 GitHub Pages 的公开路径。</p>
+          <h3>文件夹分组</h3>
+          <p>根目录首页按 Base64、Cron、Json、Jwt 四个文件夹拆成四行。</p>
         </div>
         <div class="workflow-card">
           <span>02</span>
-          <h3>独立页面</h3>
-          <p>每个工具保留自己的目录和页面结构，方便单独维护。</p>
+          <h3>三张一页</h3>
+          <p>每组默认显示 3 张卡片，左右箭头和分页点同步切换。</p>
         </div>
         <div class="workflow-card">
           <span>03</span>
-          <h3>持续扩展</h3>
-          <p>新增工具时只需要添加一个卡片和一个跳转地址。</p>
+          <h3>独立维护</h3>
+          <p>每个工具保留自己的目录和页面结构，新增入口时只补卡片。</p>
         </div>
       </div>
     </section>
@@ -1061,8 +1452,88 @@
 
   <footer class="site footer">
     <span>GithubPage 工具首页</span>
-    <span>Published with GitHub Pages</span>
+    <span>Copyright © 2026 shenxuan1999 · shenxuan1999@gmail.com</span>
   </footer>
+
+  <script>
+    (() => {
+      const pageSize = 3;
+
+      document.querySelectorAll("[data-folder-group]").forEach((group) => {
+        const cardsContainer = group.querySelector("[data-folder-cards]");
+        const cards = Array.from(group.querySelectorAll("[data-folder-card]"));
+        const previousButton = group.querySelector("[data-folder-prev]");
+        const nextButton = group.querySelector("[data-folder-next]");
+        const pages = group.querySelector("[data-folder-pages]");
+        const count = group.querySelector(".folder-count");
+        const folderName = group.dataset.folderName || "工具";
+        const pageCount = Math.max(1, Math.ceil(cards.length / pageSize));
+        let currentPage = 0;
+
+        const render = () => {
+          const start = currentPage * pageSize;
+          const end = start + pageSize;
+          let visibleCount = 0;
+
+          cards.forEach((card, index) => {
+            card.hidden = index < start || index >= end;
+            if (!card.hidden) {
+              visibleCount += 1;
+            }
+          });
+
+          cardsContainer.querySelectorAll("[data-folder-empty]").forEach((card) => card.remove());
+
+          for (let index = visibleCount; index < pageSize; index += 1) {
+            const emptyCard = document.createElement("div");
+            emptyCard.className = "tool-card empty-card";
+            emptyCard.dataset.folderEmpty = "";
+            emptyCard.setAttribute("aria-hidden", "true");
+            cardsContainer.append(emptyCard);
+          }
+
+          if (count) {
+            count.textContent = `${cards.length} 张卡片`;
+          }
+
+          previousButton.disabled = pageCount <= 1;
+          nextButton.disabled = pageCount <= 1;
+          pages.replaceChildren();
+
+          for (let index = 0; index < pageCount; index += 1) {
+            const dot = document.createElement("button");
+            dot.type = "button";
+            dot.className = "page-dot";
+            dot.setAttribute("aria-label", `${folderName} 第 ${index + 1} 页`);
+
+            if (index === currentPage) {
+              dot.setAttribute("aria-current", "true");
+            }
+
+            dot.addEventListener("click", () => {
+              currentPage = index;
+              render();
+            });
+
+            pages.append(dot);
+          }
+        };
+
+        const move = (direction) => {
+          if (pageCount <= 1) {
+            return;
+          }
+
+          currentPage = (currentPage + direction + pageCount) % pageCount;
+          render();
+        };
+
+        previousButton.addEventListener("click", () => move(-1));
+        nextButton.addEventListener("click", () => move(1));
+        render();
+      });
+    })();
+  </script>
 </body>
 
 </html>
