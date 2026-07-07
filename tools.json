@@ -1,0 +1,78 @@
+{
+  "groups": [
+    {
+      "name": "Base64",
+      "tools": [
+        {
+          "file": "index.html",
+          "title": "Base64 转图片",
+          "description": "粘贴 Base64 或 data:image/...;base64，自动识别类型并预览图片。",
+          "href": "Base64/index.html",
+          "tags": [
+            "Base64"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Cron",
+      "tools": [
+        {
+          "file": "index.html",
+          "title": "Cron 表达式生成器",
+          "description": "生成 Quartz 风格 Cron，支持秒、分钟、小时、日、月、周、年和最近运行时间预览。",
+          "href": "Cron/index.html",
+          "tags": [
+            "Cron"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Json",
+      "tools": [
+        {
+          "file": "index.html",
+          "title": "JSON 解析器",
+          "description": "自动校验、格式化、去转义，并将 Unicode 中文直接显示。",
+          "href": "Json/index.html",
+          "tags": [
+            "Json"
+          ]
+        },
+        {
+          "file": "ToCsharp.html",
+          "title": "JSON 转 C# 类",
+          "description": "自动识别 JSON 结构，按 Pascal 命名生成 private class 和属性注释。",
+          "href": "Json/ToCsharp.html",
+          "tags": [
+            "Json",
+            "HTML"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Jwt",
+      "tools": [
+        {
+          "file": "index.html",
+          "title": "JWT 解析器",
+          "description": "本地解析 Header、Payload 和签名段，自动识别常见时间字段。",
+          "href": "Jwt/index.html",
+          "tags": [
+            "Jwt"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Test1",
+      "tools": []
+    },
+    {
+      "name": "Test2",
+      "tools": []
+    }
+  ]
+}
