@@ -1,0 +1,1216 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JSON 转 C# 类</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #050505;
+      --panel: #111317;
+      --text: #f5f7fb;
+      --muted: #9aa4b2;
+      --muted-strong: #c9d1dc;
+      --border: rgba(255, 255, 255, 0.12);
+      --border-strong: rgba(255, 255, 255, 0.24);
+      --success: #2dd4bf;
+      --danger: #fb7185;
+      --warning: #f59e0b;
+      --shadow: 0 28px 80px rgba(0, 0, 0, 0.44);
+      --mono: Consolas, "SFMono-Regular", "Liberation Mono", Menlo, monospace;
+      --sans: Inter, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 260px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        var(--bg);
+      background-size: auto, 80px 80px, 80px 80px, auto;
+      color: var(--text);
+      font-family: var(--sans);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(120deg, rgba(47, 125, 246, 0.16), transparent 30%, transparent 72%, rgba(45, 212, 191, 0.12)),
+        linear-gradient(180deg, transparent, rgba(5, 5, 5, 0.86) 78%);
+      z-index: -1;
+    }
+
+    button,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .app {
+      width: min(1480px, calc(100vw - 40px));
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 22px 0 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 0 2px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .mark {
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04)),
+        #090a0c;
+      color: #ffffff;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+      flex: 0 0 auto;
+    }
+
+    .mark svg {
+      width: 25px;
+      height: 25px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 36px;
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .button {
+      min-height: 38px;
+      border-radius: 8px;
+      padding: 0 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+      white-space: nowrap;
+    }
+
+    .button:hover,
+    .button:focus-visible {
+      border-color: var(--border-strong);
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    .button.primary {
+      color: #050505;
+      background: #ffffff;
+      border-color: #ffffff;
+      font-weight: 700;
+    }
+
+    .button.primary:hover,
+    .button.primary:focus-visible {
+      background: #eef3ff;
+      border-color: #eef3ff;
+    }
+
+    .button svg {
+      width: 17px;
+      height: 17px;
+      stroke-width: 2.2;
+      flex: 0 0 auto;
+    }
+
+    .toggle {
+      min-height: 38px;
+      padding: 0 12px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--muted-strong);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .toggle input {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      accent-color: var(--success);
+    }
+
+    .status-strip {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) repeat(3, auto);
+      align-items: center;
+      gap: 10px;
+      padding: 13px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035)),
+        rgba(17, 19, 23, 0.86);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .status-main {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--warning);
+      box-shadow: 0 0 0 4px rgba(184, 107, 0, 0.12);
+      flex: 0 0 auto;
+    }
+
+    .status-strip.valid .status-dot {
+      background: var(--success);
+      box-shadow: 0 0 0 4px rgba(45, 212, 191, 0.14), 0 0 18px rgba(45, 212, 191, 0.58);
+    }
+
+    .status-strip.invalid .status-dot {
+      background: var(--danger);
+      box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.14), 0 0 18px rgba(251, 113, 133, 0.34);
+    }
+
+    .status-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .metric {
+      min-height: 30px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.055);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .workspace {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .pane {
+      min-height: 540px;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035)),
+        var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .pane-head {
+      height: 58px;
+      padding: 0 14px 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.045);
+    }
+
+    .pane-title {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-weight: 700;
+      color: var(--muted-strong);
+    }
+
+    .pane-title svg {
+      width: 18px;
+      height: 18px;
+      color: var(--success);
+      flex: 0 0 auto;
+    }
+
+    .pane-tools {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+
+    .icon-button {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid transparent;
+      transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+    }
+
+    .icon-button:hover,
+    .icon-button:focus-visible {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--border-strong);
+      color: var(--text);
+      outline: none;
+    }
+
+    .icon-button svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .editor-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      background: #080b10;
+    }
+
+    .editor-shell {
+      height: 100%;
+      min-height: 480px;
+      display: grid;
+      grid-template-columns: 56px minmax(0, 1fr);
+      background: #080b10;
+    }
+
+    .line-gutter {
+      margin: 0;
+      padding: 18px 10px 18px 0;
+      overflow: hidden;
+      color: rgba(154, 164, 178, 0.62);
+      background: #07090d;
+      border-right: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.68;
+      text-align: right;
+      user-select: none;
+      white-space: pre;
+    }
+
+    textarea {
+      width: 100%;
+      height: 100%;
+      min-height: 480px;
+      padding: 18px;
+      resize: none;
+      outline: none;
+      border: 0;
+      display: block;
+      color: #e9eef8;
+      background: #080b10;
+      caret-color: var(--success);
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.68;
+      tab-size: 2;
+      letter-spacing: 0;
+      overflow: auto;
+      white-space: pre;
+    }
+
+    textarea::placeholder {
+      color: rgba(154, 164, 178, 0.72);
+    }
+
+    .output {
+      height: 100%;
+      min-height: 480px;
+      margin: 0;
+      padding: 18px;
+      overflow: auto;
+      color: #dbe7f7;
+      background: #080b10;
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.68;
+      white-space: pre;
+      tab-size: 4;
+    }
+
+    .placeholder {
+      color: rgba(154, 164, 178, 0.72);
+    }
+
+    .cs-keyword {
+      color: #93c5fd;
+      font-weight: 700;
+    }
+
+    .cs-type {
+      color: #2dd4bf;
+    }
+
+    .cs-class-name {
+      color: #fbbf24;
+    }
+
+    .cs-property {
+      color: #e9d5ff;
+    }
+
+    .cs-comment {
+      color: #94a3b8;
+    }
+
+    .cs-tag {
+      color: #86efac;
+    }
+
+    .error-box {
+      margin: 14px;
+      padding: 14px 15px;
+      border-radius: 8px;
+      border: 1px solid rgba(251, 113, 133, 0.32);
+      background: rgba(251, 113, 133, 0.1);
+      color: #fecdd3;
+      font-size: 14px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        width: min(100vw - 24px, 760px);
+        padding: 14px 0;
+      }
+
+      .topbar,
+      .status-strip,
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .actions {
+        justify-content: flex-start;
+      }
+
+      h1 {
+        font-size: 30px;
+      }
+
+      .subtitle {
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .status-strip {
+        display: flex;
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .status-text {
+        white-space: normal;
+      }
+
+      .metric {
+        width: 100%;
+      }
+
+      .pane {
+        min-height: 420px;
+      }
+
+      .editor-shell,
+      textarea,
+      .output {
+        min-height: 360px;
+        font-size: 13px;
+      }
+
+      .line-gutter {
+        width: 48px;
+        font-size: 13px;
+      }
+
+      .editor-shell {
+        grid-template-columns: 48px minmax(0, 1fr);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="m18 16 4-4-4-4"></path>
+            <path d="m6 8-4 4 4 4"></path>
+            <path d="m14.5 4-5 16"></path>
+          </svg>
+        </div>
+        <div>
+          <h1>JSON 转 C# 类</h1>
+          <p class="subtitle">自动识别 JSON 结构，按 Pascal 命名生成 private class 和属性注释。</p>
+        </div>
+      </div>
+      <div class="actions">
+        <label class="toggle" title="开启后所有字段类型后追加 ?">
+          <input id="nullableToggle" type="checkbox">
+          字段可空
+        </label>
+        <button class="button" id="sampleBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path>
+            <path d="M14 2v4a2 2 0 0 0 2 2h4"></path>
+            <path d="M10 9H8"></path>
+            <path d="M16 13H8"></path>
+            <path d="M16 17H8"></path>
+          </svg>
+          示例
+        </button>
+        <button class="button primary" id="copyBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <rect width="14" height="14" x="8" y="8" rx="2"></rect>
+            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+          </svg>
+          复制结果
+        </button>
+      </div>
+    </header>
+
+    <section class="status-strip" id="statusStrip" aria-live="polite">
+      <div class="status-main">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span class="status-text" id="statusText">等待输入 JSON</span>
+      </div>
+      <div class="metric" id="classMetric">类：0</div>
+      <div class="metric" id="propertyMetric">字段：0</div>
+      <div class="metric" id="nullableMetric">可空：否</div>
+    </section>
+
+    <section class="workspace">
+      <article class="pane">
+        <div class="pane-head">
+          <div class="pane-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+            </svg>
+            JSON 输入
+          </div>
+          <div class="pane-tools">
+            <button class="icon-button" id="pasteBtn" type="button" title="粘贴">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M8 4v3a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V4"></path>
+                <rect width="8" height="4" x="8" y="2" rx="1"></rect>
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+              </svg>
+            </button>
+            <button class="icon-button" id="clearBtn" type="button" title="清空">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M3 6h18"></path>
+                <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                <path d="M10 11v6"></path>
+                <path d="M14 11v6"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="editor-wrap">
+          <div class="editor-shell">
+            <pre class="line-gutter" id="inputLines" aria-hidden="true">1</pre>
+            <textarea id="input" spellcheck="false" wrap="off"
+              placeholder='粘贴 JSON，例如：{"code":"0","error":"","msg":"ok"}'></textarea>
+          </div>
+        </div>
+      </article>
+
+      <article class="pane">
+        <div class="pane-head">
+          <div class="pane-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M8 4H6a2 2 0 0 0-2 2v3a3 3 0 0 1-2 3 3 3 0 0 1 2 3v3a2 2 0 0 0 2 2h2"></path>
+              <path d="M16 4h2a2 2 0 0 1 2 2v3a3 3 0 0 0 2 3 3 3 0 0 0-2 3v3a2 2 0 0 1-2 2h-2"></path>
+            </svg>
+            C# 类
+          </div>
+          <div class="pane-tools">
+            <button class="icon-button" id="downloadBtn" type="button" title="下载 CS">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M12 15V3"></path>
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <path d="m7 10 5 5 5-5"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="editor-wrap" id="resultWrap">
+          <pre class="output placeholder" id="output">生成的 C# 类会显示在这里。</pre>
+          <div class="error-box hidden" id="errorBox"></div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const input = document.querySelector("#input");
+    const inputLines = document.querySelector("#inputLines");
+    const output = document.querySelector("#output");
+    const errorBox = document.querySelector("#errorBox");
+    const statusStrip = document.querySelector("#statusStrip");
+    const statusText = document.querySelector("#statusText");
+    const classMetric = document.querySelector("#classMetric");
+    const propertyMetric = document.querySelector("#propertyMetric");
+    const nullableMetric = document.querySelector("#nullableMetric");
+    const nullableToggle = document.querySelector("#nullableToggle");
+    const sampleBtn = document.querySelector("#sampleBtn");
+    const clearBtn = document.querySelector("#clearBtn");
+    const pasteBtn = document.querySelector("#pasteBtn");
+    const copyBtn = document.querySelector("#copyBtn");
+    const downloadBtn = document.querySelector("#downloadBtn");
+
+    const csharpKeywords = new Set([
+      "abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char", "checked",
+      "class", "const", "continue", "decimal", "default", "delegate", "do", "double", "else",
+      "enum", "event", "explicit", "extern", "false", "finally", "fixed", "float", "for",
+      "foreach", "goto", "if", "implicit", "in", "int", "interface", "internal", "is", "lock",
+      "long", "namespace", "new", "null", "object", "operator", "out", "override", "params",
+      "private", "protected", "public", "readonly", "ref", "return", "sbyte", "sealed", "short",
+      "sizeof", "stackalloc", "static", "string", "struct", "switch", "this", "throw", "true",
+      "try", "typeof", "uint", "ulong", "unchecked", "unsafe", "ushort", "using", "virtual",
+      "void", "volatile", "while"
+    ]);
+
+    const sample = String.raw`{
+  "code": "0",
+  "error": "",
+  "msg": "success",
+  "data": {
+    "user_id": 1001,
+    "user-name": "张三",
+    "is_admin": true,
+    "roles": ["owner", "reviewer"],
+    "profile": {
+      "mobile_phone": "13800000000",
+      "last_login_time": "2026-07-07 09:30:00"
+    }
+  }
+}`;
+
+    let generatedCode = "";
+    let parseTimer = 0;
+
+    input.addEventListener("input", () => {
+      updateInputLineNumbers();
+      window.clearTimeout(parseTimer);
+      parseTimer = window.setTimeout(parseAndRender, 120);
+    });
+
+    input.addEventListener("scroll", () => {
+      inputLines.scrollTop = input.scrollTop;
+    });
+
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Tab") {
+        event.preventDefault();
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        input.setRangeText("  ", start, end, "end");
+        updateInputLineNumbers();
+        parseAndRender();
+      }
+    });
+
+    nullableToggle.addEventListener("change", parseAndRender);
+
+    sampleBtn.addEventListener("click", () => {
+      input.value = sample;
+      input.focus();
+      updateInputLineNumbers();
+      parseAndRender();
+    });
+
+    clearBtn.addEventListener("click", () => {
+      input.value = "";
+      input.focus();
+      updateInputLineNumbers();
+      renderEmpty();
+    });
+
+    pasteBtn.addEventListener("click", async () => {
+      if (!navigator.clipboard?.readText) {
+        setStatus("invalid", "当前浏览器不支持直接读取剪贴板");
+        return;
+      }
+
+      try {
+        input.value = await navigator.clipboard.readText();
+        input.focus();
+        updateInputLineNumbers();
+        parseAndRender();
+      } catch {
+        setStatus("invalid", "浏览器没有授权读取剪贴板");
+      }
+    });
+
+    copyBtn.addEventListener("click", async () => {
+      if (!generatedCode) {
+        setStatus("invalid", "没有可复制的 C# 类");
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(generatedCode);
+        setStatus("valid", "已复制 C# 类");
+      } catch {
+        setStatus("invalid", "复制失败，请手动选择结果复制");
+      }
+    });
+
+    downloadBtn.addEventListener("click", () => {
+      if (!generatedCode) {
+        setStatus("invalid", "没有可下载的 C# 类");
+        return;
+      }
+
+      const blob = new Blob([generatedCode], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "JsonClasses.cs";
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+
+    function parseAndRender() {
+      const raw = input.value.trim();
+      nullableMetric.textContent = `可空：${nullableToggle.checked ? "是" : "否"}`;
+
+      if (!raw) {
+        renderEmpty();
+        return;
+      }
+
+      const result = parseJson(raw);
+
+      if (!result.ok) {
+        generatedCode = "";
+        output.classList.add("hidden");
+        errorBox.classList.remove("hidden");
+        errorBox.textContent = result.message;
+        setStatus("invalid", "JSON 校验失败");
+        classMetric.textContent = "类：0";
+        propertyMetric.textContent = "字段：0";
+        return;
+      }
+
+      try {
+        const schema = buildClasses(result.value);
+        generatedCode = renderCsharp(schema.classes, nullableToggle.checked);
+        renderHighlightedCode(generatedCode);
+        output.classList.remove("placeholder", "hidden");
+        errorBox.classList.add("hidden");
+        setStatus("valid", "已生成 C# 类");
+        classMetric.textContent = `类：${schema.classes.length}`;
+        propertyMetric.textContent = `字段：${schema.propertyCount}`;
+      } catch (error) {
+        generatedCode = "";
+        output.classList.add("hidden");
+        errorBox.classList.remove("hidden");
+        errorBox.textContent = error.message || "无法根据当前 JSON 生成 C# 类";
+        setStatus("invalid", "生成失败");
+        classMetric.textContent = "类：0";
+        propertyMetric.textContent = "字段：0";
+      }
+    }
+
+    function buildClasses(value) {
+      const context = {
+        classes: [],
+        propertyCount: 0
+      };
+
+      if (Array.isArray(value)) {
+        if (value.length === 0) {
+          throw new Error("顶层数组为空，无法推断 Class1 字段。");
+        }
+
+        const itemObject = value.find((item) => isPlainObject(item));
+        if (!itemObject) {
+          const valueType = mergeTypes(value.map((item) => inferType(item, context)));
+          context.classes.push({
+            name: "Class1",
+            properties: [{ name: "Value", type: valueType }]
+          });
+          context.propertyCount = 1;
+          return context;
+        }
+
+        createClassFromObjects(value.filter((item) => isPlainObject(item)), context);
+        return context;
+      }
+
+      if (!isPlainObject(value)) {
+        context.classes.push({
+          name: "Class1",
+          properties: [{ name: "Value", type: inferType(value, context) }]
+        });
+        context.propertyCount = 1;
+        return context;
+      }
+
+      createClassFromObjects([value], context);
+      return context;
+    }
+
+    function createClassFromObjects(objects, context) {
+      const className = `Class${context.classes.length + 1}`;
+      const classModel = { name: className, properties: [] };
+      context.classes.push(classModel);
+
+      const valuesByKey = new Map();
+      objects.forEach((object) => {
+        Object.entries(object).forEach(([key, value]) => {
+          if (!valuesByKey.has(key)) {
+            valuesByKey.set(key, []);
+          }
+          valuesByKey.get(key).push(value);
+        });
+      });
+
+      const usedNames = new Set();
+      valuesByKey.forEach((values, key) => {
+        const propertyName = uniqueName(toPascalName(key), usedNames);
+        const propertyType = inferPropertyType(values, context);
+        classModel.properties.push({ name: propertyName, type: propertyType });
+        context.propertyCount += 1;
+      });
+
+      return className;
+    }
+
+    function inferPropertyType(values, context) {
+      const meaningfulValues = values.filter((value) => value !== null && value !== undefined);
+      if (meaningfulValues.length === 0) {
+        return "object";
+      }
+
+      if (meaningfulValues.every((value) => isPlainObject(value))) {
+        return createClassFromObjects(meaningfulValues, context);
+      }
+
+      if (meaningfulValues.every((value) => Array.isArray(value))) {
+        return inferArrayType(meaningfulValues, context);
+      }
+
+      if (meaningfulValues.some((value) => isPlainObject(value) || Array.isArray(value))) {
+        return "object";
+      }
+
+      return mergeTypes(meaningfulValues.map((item) => inferType(item, context)));
+    }
+
+    function inferArrayType(arrays, context) {
+      const items = arrays.flat();
+      const meaningfulItems = items.filter((item) => item !== null && item !== undefined);
+
+      if (meaningfulItems.length === 0) {
+        return "List<object>";
+      }
+
+      if (meaningfulItems.every((item) => isPlainObject(item))) {
+        const className = createClassFromObjects(meaningfulItems, context);
+        return `List<${className}>`;
+      }
+
+      if (meaningfulItems.every((item) => Array.isArray(item))) {
+        return `List<${inferArrayType(meaningfulItems, context)}>`;
+      }
+
+      if (meaningfulItems.some((item) => isPlainObject(item) || Array.isArray(item))) {
+        return "List<object>";
+      }
+
+      return `List<${mergeTypes(meaningfulItems.map((item) => inferType(item, context)))}>`;
+    }
+
+    function inferType(value, context) {
+      if (value === null || value === undefined) {
+        return "object";
+      }
+
+      if (Array.isArray(value)) {
+        return inferArrayType([value], context);
+      }
+
+      if (isPlainObject(value)) {
+        return createClassFromObjects([value], context);
+      }
+
+      if (typeof value === "string") {
+        return "string";
+      }
+
+      if (typeof value === "boolean") {
+        return "bool";
+      }
+
+      if (typeof value === "number") {
+        if (!Number.isFinite(value)) {
+          return "decimal";
+        }
+        if (!Number.isInteger(value)) {
+          return "decimal";
+        }
+        if (value >= -2147483648 && value <= 2147483647) {
+          return "int";
+        }
+        return "long";
+      }
+
+      return "object";
+    }
+
+    function mergeTypes(types) {
+      const normalized = [...new Set(types.filter(Boolean))];
+      if (normalized.length === 0) {
+        return "object";
+      }
+      if (normalized.length === 1) {
+        return normalized[0];
+      }
+
+      const withoutObject = normalized.filter((type) => type !== "object");
+      if (withoutObject.length === 1) {
+        return withoutObject[0];
+      }
+
+      const numericTypes = new Set(["int", "long", "decimal"]);
+      if (normalized.every((type) => numericTypes.has(type) || type === "object")) {
+        if (normalized.includes("decimal")) {
+          return "decimal";
+        }
+        if (normalized.includes("long")) {
+          return "long";
+        }
+        return "int";
+      }
+
+      return "object";
+    }
+
+    function renderCsharp(classes, nullable) {
+      return classes.map((classModel) => {
+        const lines = [
+          `    private class ${classModel.name}`,
+          "    {"
+        ];
+
+        classModel.properties.forEach((property) => {
+          const type = nullable ? `${property.type}?` : property.type;
+          lines.push(
+            "        /// <summary>",
+            "        /// ",
+            "        /// </summary>",
+            `        public ${type} ${property.name} { get; set; }`
+          );
+        });
+
+        lines.push("    }");
+        return lines.join("\n");
+      }).join("\n\n");
+    }
+
+    function renderHighlightedCode(code) {
+      output.innerHTML = code.split("\n").map(highlightLine).join("\n");
+    }
+
+    function highlightLine(line) {
+      const escapedLine = escapeHtml(line);
+
+      if (escapedLine.trim().startsWith("///")) {
+        return escapedLine
+          .replace(/(&lt;\/?summary&gt;)/g, '<span class="cs-tag">$1</span>')
+          .replace(/(\/\/\/)/, '<span class="cs-comment">$1</span>');
+      }
+
+      const keywords = new Set(["private", "public", "class", "get", "set"]);
+      const types = new Set(["string", "bool", "int", "long", "decimal", "object", "List"]);
+
+      return escapedLine.replace(/\b(private|public|class|get|set|string|bool|int|long|decimal|object|List|Class\d+|[A-Z][A-Za-z0-9]*)(\?)?\b/g, (match, word, nullable, offset) => {
+        const suffix = nullable || "";
+        if (keywords.has(word)) {
+          return `<span class="cs-keyword">${word}${suffix}</span>`;
+        }
+        if (types.has(word)) {
+          return `<span class="cs-type">${word}${suffix}</span>`;
+        }
+        if (/^Class\d+$/.test(word)) {
+          return `<span class="cs-class-name">${word}${suffix}</span>`;
+        }
+        if (escapedLine.slice(offset + match.length).startsWith(" { get; set; }")) {
+          return `<span class="cs-property">${word}${suffix}</span>`;
+        }
+        return match;
+      });
+    }
+
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function toPascalName(key) {
+      const words = String(key)
+        .replace(/([a-z\d])([A-Z])/g, "$1 $2")
+        .split(/[^A-Za-z0-9]+/)
+        .filter(Boolean);
+
+      let name = words.map((word) => {
+        const lower = word.toLowerCase();
+        return lower.charAt(0).toUpperCase() + lower.slice(1);
+      }).join("");
+
+      if (!name) {
+        name = "Value";
+      }
+
+      if (/^\d/.test(name)) {
+        name = `Value${name}`;
+      }
+
+      if (csharpKeywords.has(name.toLowerCase())) {
+        name = `${name}Value`;
+      }
+
+      return name;
+    }
+
+    function uniqueName(name, usedNames) {
+      let candidate = name;
+      let index = 2;
+      while (usedNames.has(candidate)) {
+        candidate = `${name}${index}`;
+        index += 1;
+      }
+      usedNames.add(candidate);
+      return candidate;
+    }
+
+    function parseJson(raw) {
+      const candidates = buildCandidates(raw);
+      let lastError = null;
+
+      for (const candidate of candidates) {
+        try {
+          const parsed = JSON.parse(candidate);
+          return { ok: true, value: unwrapJsonString(parsed) };
+        } catch (error) {
+          lastError = error;
+        }
+      }
+
+      return {
+        ok: false,
+        message: formatJsonError(lastError, raw)
+      };
+    }
+
+    function buildCandidates(raw) {
+      const text = raw.trim();
+      const candidates = [text];
+
+      if (isWrappedInQuotes(text)) {
+        try {
+          const unwrapped = JSON.parse(text);
+          if (typeof unwrapped === "string") {
+            candidates.push(unwrapped.trim());
+          }
+        } catch {
+          // Keep the original parser error.
+        }
+      }
+
+      const quoteFixed = text.replace(/\\"/g, '"').replace(/\\\//g, "/");
+      if (quoteFixed !== text) {
+        candidates.push(quoteFixed);
+      }
+
+      return [...new Set(candidates)];
+    }
+
+    function unwrapJsonString(value) {
+      let current = value;
+
+      for (let i = 0; i < 4; i += 1) {
+        if (typeof current !== "string") {
+          break;
+        }
+
+        const text = current.trim();
+        if (!looksLikeJson(text)) {
+          break;
+        }
+
+        current = JSON.parse(text);
+      }
+
+      return current;
+    }
+
+    function looksLikeJson(text) {
+      return (
+        (text.startsWith("{") && text.endsWith("}")) ||
+        (text.startsWith("[") && text.endsWith("]")) ||
+        isWrappedInQuotes(text)
+      );
+    }
+
+    function isWrappedInQuotes(text) {
+      return text.length >= 2 && text.startsWith('"') && text.endsWith('"');
+    }
+
+    function formatJsonError(error, source) {
+      const base = error?.message || "无法解析 JSON";
+      const position = extractErrorPosition(base);
+
+      if (position === null) {
+        return base;
+      }
+
+      const location = getLineColumn(source, position);
+      return `${base}\n位置：第 ${location.line} 行，第 ${location.column} 列`;
+    }
+
+    function extractErrorPosition(message) {
+      const match = message.match(/position\s+(\d+)/i);
+      return match ? Number(match[1]) : null;
+    }
+
+    function getLineColumn(text, position) {
+      const before = text.slice(0, position);
+      const lines = before.split(/\r\n|\r|\n/);
+      return {
+        line: lines.length,
+        column: lines[lines.length - 1].length + 1
+      };
+    }
+
+    function isPlainObject(value) {
+      return value !== null && typeof value === "object" && !Array.isArray(value);
+    }
+
+    function renderEmpty() {
+      generatedCode = "";
+      output.textContent = "生成的 C# 类会显示在这里。";
+      output.classList.add("placeholder");
+      output.classList.remove("hidden");
+      errorBox.classList.add("hidden");
+      setStatus("", "等待输入 JSON");
+      classMetric.textContent = "类：0";
+      propertyMetric.textContent = "字段：0";
+      nullableMetric.textContent = `可空：${nullableToggle.checked ? "是" : "否"}`;
+    }
+
+    function updateInputLineNumbers() {
+      const lines = Math.max(1, countLines(input.value));
+      inputLines.textContent = Array.from({ length: lines }, (_, index) => index + 1).join("\n");
+      inputLines.scrollTop = input.scrollTop;
+    }
+
+    function setStatus(state, message) {
+      statusStrip.classList.remove("valid", "invalid");
+      if (state) {
+        statusStrip.classList.add(state);
+      }
+      statusText.textContent = message;
+    }
+
+    function countLines(text) {
+      return text ? text.split(/\r\n|\r|\n/).length : 0;
+    }
+
+    updateInputLineNumbers();
+    renderEmpty();
+  </script>
+</body>
+
+</html>

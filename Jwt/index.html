@@ -1,0 +1,1027 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JWT 解析器</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #050505;
+      --panel: #111317;
+      --text: #f5f7fb;
+      --muted: #9aa4b2;
+      --muted-strong: #c9d1dc;
+      --border: rgba(255, 255, 255, 0.12);
+      --border-strong: rgba(255, 255, 255, 0.24);
+      --success: #2dd4bf;
+      --danger: #fb7185;
+      --warning: #f59e0b;
+      --shadow: 0 28px 80px rgba(0, 0, 0, 0.44);
+      --mono: Consolas, "SFMono-Regular", "Liberation Mono", Menlo, monospace;
+      --sans: Inter, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 260px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        var(--bg);
+      background-size: auto, 80px 80px, 80px 80px, auto;
+      color: var(--text);
+      font-family: var(--sans);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(120deg, rgba(47, 125, 246, 0.16), transparent 30%, transparent 72%, rgba(45, 212, 191, 0.12)),
+        linear-gradient(180deg, transparent, rgba(5, 5, 5, 0.86) 78%);
+      z-index: -1;
+    }
+
+    button,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .app {
+      width: min(1480px, calc(100vw - 40px));
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 22px 0 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 0 2px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .mark {
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04)),
+        #090a0c;
+      color: #ffffff;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+      flex: 0 0 auto;
+    }
+
+    .mark svg {
+      width: 25px;
+      height: 25px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 36px;
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .button {
+      min-height: 38px;
+      border-radius: 8px;
+      padding: 0 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+      white-space: nowrap;
+    }
+
+    .button:hover,
+    .button:focus-visible {
+      border-color: var(--border-strong);
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    .button.primary {
+      color: #050505;
+      background: #ffffff;
+      border-color: #ffffff;
+      font-weight: 700;
+    }
+
+    .button.primary:hover,
+    .button.primary:focus-visible {
+      background: #eef3ff;
+      border-color: #eef3ff;
+    }
+
+    .button svg {
+      width: 17px;
+      height: 17px;
+      stroke-width: 2.2;
+      flex: 0 0 auto;
+    }
+
+    .status-strip {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) repeat(5, auto);
+      align-items: center;
+      gap: 10px;
+      padding: 13px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035)),
+        rgba(17, 19, 23, 0.86);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .status-main {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--warning);
+      box-shadow: 0 0 0 4px rgba(184, 107, 0, 0.12);
+      flex: 0 0 auto;
+    }
+
+    .status-strip.valid .status-dot {
+      background: var(--success);
+      box-shadow: 0 0 0 4px rgba(45, 212, 191, 0.14), 0 0 18px rgba(45, 212, 191, 0.58);
+    }
+
+    .status-strip.invalid .status-dot {
+      background: var(--danger);
+      box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.14), 0 0 18px rgba(251, 113, 133, 0.34);
+    }
+
+    .status-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .metric {
+      min-height: 30px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.055);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .workspace {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+      gap: 18px;
+    }
+
+    .pane {
+      min-height: 540px;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035)),
+        var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .pane-head {
+      height: 58px;
+      padding: 0 14px 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.045);
+    }
+
+    .pane-title {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-weight: 700;
+      color: var(--muted-strong);
+    }
+
+    .pane-title svg {
+      width: 18px;
+      height: 18px;
+      color: var(--success);
+      flex: 0 0 auto;
+    }
+
+    .pane-tools {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+
+    .icon-button {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid transparent;
+      transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+    }
+
+    .icon-button:hover,
+    .icon-button:focus-visible {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--border-strong);
+      color: var(--text);
+      outline: none;
+    }
+
+    .icon-button svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .editor-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      background: #080b10;
+    }
+
+    textarea {
+      width: 100%;
+      height: 100%;
+      min-height: 480px;
+      padding: 18px;
+      resize: none;
+      outline: none;
+      border: 0;
+      display: block;
+      color: #e9eef8;
+      background: #080b10;
+      caret-color: var(--success);
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.68;
+      tab-size: 2;
+      letter-spacing: 0;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    textarea::placeholder {
+      color: rgba(154, 164, 178, 0.72);
+    }
+
+    .output {
+      height: 100%;
+      min-height: 480px;
+      padding: 16px;
+      overflow: auto;
+      background: #080b10;
+    }
+
+    .placeholder {
+      color: rgba(154, 164, 178, 0.72);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .decoded-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .decoded-block {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .block-head {
+      min-height: 42px;
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted-strong);
+      background: rgba(255, 255, 255, 0.045);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .block-tag {
+      color: var(--success);
+      font-family: var(--mono);
+      font-weight: 700;
+    }
+
+    .code {
+      margin: 0;
+      padding: 14px;
+      overflow: auto;
+      color: #dbe7f7;
+      background: #080b10;
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.68;
+      white-space: pre;
+      tab-size: 2;
+    }
+
+    .claims {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      padding: 12px;
+      background: #080b10;
+    }
+
+    .claim {
+      min-width: 0;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.045);
+    }
+
+    .claim-label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .claim-value {
+      margin-top: 6px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    .signature-info {
+      margin: 0;
+      padding: 14px;
+      color: #dbe7f7;
+      background: #080b10;
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.68;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .json-key {
+      color: #93c5fd;
+    }
+
+    .json-string {
+      color: #86efac;
+    }
+
+    .json-number {
+      color: #fbbf24;
+    }
+
+    .json-boolean {
+      color: #f0abfc;
+    }
+
+    .json-null {
+      color: #c4b5fd;
+    }
+
+    .json-punctuation {
+      color: #dbe7f7;
+    }
+
+    .error-box {
+      margin: 14px;
+      padding: 14px 15px;
+      border-radius: 8px;
+      border: 1px solid rgba(251, 113, 133, 0.32);
+      background: rgba(251, 113, 133, 0.1);
+      color: #fecdd3;
+      font-size: 14px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        width: min(100vw - 24px, 760px);
+        padding: 14px 0;
+      }
+
+      .topbar,
+      .status-strip,
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .actions {
+        justify-content: flex-start;
+      }
+
+      h1 {
+        font-size: 30px;
+      }
+
+      .subtitle {
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .status-strip {
+        display: flex;
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .status-text {
+        white-space: normal;
+      }
+
+      .metric {
+        width: 100%;
+      }
+
+      .pane {
+        min-height: 420px;
+      }
+
+      textarea,
+      .output {
+        min-height: 360px;
+        font-size: 13px;
+      }
+
+      .claims {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M15 7a2 2 0 0 1 2 2"></path>
+            <path d="M9 15a6 6 0 1 0 6-6"></path>
+            <path d="M14 14 21 7"></path>
+            <path d="m18 7 3 3"></path>
+            <path d="m15 10 3 3"></path>
+          </svg>
+        </div>
+        <div>
+          <h1>JWT 解析器</h1>
+          <p class="subtitle">本地解析 Header、Payload 和签名段，自动识别常见时间字段。</p>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="button" id="sampleBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path>
+            <path d="M14 2v4a2 2 0 0 0 2 2h4"></path>
+            <path d="M10 9H8"></path>
+            <path d="M16 13H8"></path>
+            <path d="M16 17H8"></path>
+          </svg>
+          示例
+        </button>
+        <button class="button primary" id="copyBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <rect width="14" height="14" x="8" y="8" rx="2"></rect>
+            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+          </svg>
+          复制解析结果
+        </button>
+      </div>
+    </header>
+
+    <section class="status-strip" id="statusStrip" aria-live="polite">
+      <div class="status-main">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span class="status-text" id="statusText">等待输入 JWT</span>
+      </div>
+      <div class="metric" id="algMetric">算法：-</div>
+      <div class="metric" id="typMetric">类型：-</div>
+      <div class="metric" id="expMetric">过期：-</div>
+      <div class="metric" id="sigMetric">签名：-</div>
+      <div class="metric" id="partMetric">段数：0</div>
+    </section>
+
+    <section class="workspace">
+      <article class="pane">
+        <div class="pane-head">
+          <div class="pane-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+            </svg>
+            JWT 输入
+          </div>
+          <div class="pane-tools">
+            <button class="icon-button" id="pasteBtn" type="button" title="粘贴">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M8 4v3a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V4"></path>
+                <rect width="8" height="4" x="8" y="2" rx="1"></rect>
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+              </svg>
+            </button>
+            <button class="icon-button" id="clearBtn" type="button" title="清空">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M3 6h18"></path>
+                <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                <path d="M10 11v6"></path>
+                <path d="M14 11v6"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="editor-wrap">
+          <textarea id="input" spellcheck="false"
+            placeholder="粘贴 JWT，例如：eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."></textarea>
+        </div>
+      </article>
+
+      <article class="pane">
+        <div class="pane-head">
+          <div class="pane-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M8 4H6a2 2 0 0 0-2 2v3a3 3 0 0 1-2 3 3 3 0 0 1 2 3v3a2 2 0 0 0 2 2h2"></path>
+              <path d="M16 4h2a2 2 0 0 1 2 2v3a3 3 0 0 0 2 3 3 3 0 0 0-2 3v3a2 2 0 0 1-2 2h-2"></path>
+            </svg>
+            解析结果
+          </div>
+          <div class="pane-tools">
+            <button class="icon-button" id="downloadBtn" type="button" title="下载解析结果">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M12 15V3"></path>
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <path d="m7 10 5 5 5-5"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="editor-wrap">
+          <div class="output placeholder" id="output">解析后的 Header、Payload 和签名信息会显示在这里。</div>
+          <div class="error-box hidden" id="errorBox"></div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const input = document.querySelector("#input");
+    const output = document.querySelector("#output");
+    const errorBox = document.querySelector("#errorBox");
+    const statusStrip = document.querySelector("#statusStrip");
+    const statusText = document.querySelector("#statusText");
+    const algMetric = document.querySelector("#algMetric");
+    const typMetric = document.querySelector("#typMetric");
+    const expMetric = document.querySelector("#expMetric");
+    const sigMetric = document.querySelector("#sigMetric");
+    const partMetric = document.querySelector("#partMetric");
+    const sampleBtn = document.querySelector("#sampleBtn");
+    const clearBtn = document.querySelector("#clearBtn");
+    const pasteBtn = document.querySelector("#pasteBtn");
+    const copyBtn = document.querySelector("#copyBtn");
+    const downloadBtn = document.querySelector("#downloadBtn");
+
+    const sample = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMDAxIiwibmFtZSI6IuW8oOS4iSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc4MzM5MjAwMCwibmJmIjoxNzgzMzkyMDAwLCJleHAiOjE3ODM0Nzg0MDAsImlzcyI6IkdpdEh1YlBhZ2UiLCJhdWQiOiJKV1QgVG9vbCJ9.mocksignature";
+    let decodedText = "";
+    let parseTimer = 0;
+
+    input.addEventListener("input", () => {
+      window.clearTimeout(parseTimer);
+      parseTimer = window.setTimeout(parseAndRender, 120);
+    });
+
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Tab") {
+        event.preventDefault();
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        input.setRangeText("  ", start, end, "end");
+        parseAndRender();
+      }
+    });
+
+    sampleBtn.addEventListener("click", () => {
+      input.value = sample;
+      input.focus();
+      parseAndRender();
+    });
+
+    clearBtn.addEventListener("click", () => {
+      input.value = "";
+      input.focus();
+      renderEmpty();
+    });
+
+    pasteBtn.addEventListener("click", async () => {
+      if (!navigator.clipboard?.readText) {
+        setStatus("invalid", "当前浏览器不支持直接读取剪贴板");
+        return;
+      }
+
+      try {
+        input.value = await navigator.clipboard.readText();
+        input.focus();
+        parseAndRender();
+      } catch {
+        setStatus("invalid", "浏览器没有授权读取剪贴板");
+      }
+    });
+
+    copyBtn.addEventListener("click", async () => {
+      if (!decodedText) {
+        setStatus("invalid", "没有可复制的解析结果");
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(decodedText);
+        setStatus("valid", "已复制解析结果");
+      } catch {
+        setStatus("invalid", "复制失败，请手动选择结果复制");
+      }
+    });
+
+    downloadBtn.addEventListener("click", () => {
+      if (!decodedText) {
+        setStatus("invalid", "没有可下载的解析结果");
+        return;
+      }
+
+      const blob = new Blob([decodedText], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "jwt-decoded.json";
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+
+    function parseAndRender() {
+      const raw = input.value.trim();
+      if (!raw) {
+        renderEmpty();
+        return;
+      }
+
+      const result = decodeJwt(raw);
+      if (!result.ok) {
+        decodedText = "";
+        output.classList.add("hidden");
+        errorBox.classList.remove("hidden");
+        errorBox.textContent = result.message;
+        setStatus("invalid", "JWT 解析失败");
+        algMetric.textContent = "算法：-";
+        typMetric.textContent = "类型：-";
+        expMetric.textContent = "过期：-";
+        sigMetric.textContent = "签名：-";
+        partMetric.textContent = `段数：${result.partCount || 0}`;
+        return;
+      }
+
+      decodedText = JSON.stringify({
+        header: result.header,
+        payload: result.payload,
+        signature: result.signatureInfo
+      }, null, 2);
+
+      renderDecoded(result);
+      setStatus(result.expState === "expired" ? "invalid" : "valid", result.expState === "expired" ? "JWT 已解析，exp 已过期" : "JWT 已解析");
+      algMetric.textContent = `算法：${result.header.alg || "-"}`;
+      typMetric.textContent = `类型：${result.header.typ || "-"}`;
+      expMetric.textContent = `过期：${result.expLabel}`;
+      sigMetric.textContent = `签名：${result.signatureInfo.length}`;
+      partMetric.textContent = `段数：${result.parts.length}`;
+    }
+
+    function decodeJwt(raw) {
+      const token = raw.replace(/^Bearer\s+/i, "").replace(/\s+/g, "");
+      const parts = token.split(".");
+
+      if (parts.length !== 3) {
+        return {
+          ok: false,
+          partCount: parts.filter(Boolean).length,
+          message: "JWT 通常应包含 3 段：Header.Payload.Signature。"
+        };
+      }
+
+      try {
+        const header = parseJsonPart(parts[0], "Header");
+        const payload = parseJsonPart(parts[1], "Payload");
+        const signatureInfo = buildSignatureInfo(parts[2], header.alg);
+        const expInfo = getExpInfo(payload.exp);
+
+        return {
+          ok: true,
+          parts,
+          header,
+          payload,
+          signatureInfo,
+          expLabel: expInfo.label,
+          expState: expInfo.state,
+          timeClaims: buildTimeClaims(payload)
+        };
+      } catch (error) {
+        return {
+          ok: false,
+          partCount: parts.length,
+          message: error.message || "JWT 内容不是有效的 Base64Url JSON。"
+        };
+      }
+    }
+
+    function parseJsonPart(part, label) {
+      if (!part) {
+        throw new Error(`${label} 段为空。`);
+      }
+
+      const text = base64UrlDecode(part);
+      try {
+        return JSON.parse(text);
+      } catch {
+        throw new Error(`${label} 段解码后不是有效 JSON。\n\n${text}`);
+      }
+    }
+
+    function base64UrlDecode(value) {
+      const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+      const padded = normalized.padEnd(normalized.length + ((4 - normalized.length % 4) % 4), "=");
+      const binary = atob(padded);
+      const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+      return new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+    }
+
+    function buildSignatureInfo(signature, alg) {
+      return {
+        algorithm: alg || "-",
+        present: Boolean(signature),
+        length: signature.length,
+        preview: formatSignaturePreview(signature),
+        verified: false,
+        note: "这里只解析签名段，不校验签名有效性。"
+      };
+    }
+
+    function formatSignaturePreview(signature) {
+      if (!signature) {
+        return "";
+      }
+      if (signature.length <= 32) {
+        return signature;
+      }
+      return `${signature.slice(0, 16)}...${signature.slice(-12)}`;
+    }
+
+    function getExpInfo(exp) {
+      if (typeof exp !== "number") {
+        return { label: "-", state: "none" };
+      }
+
+      const date = new Date(exp * 1000);
+      if (Number.isNaN(date.getTime())) {
+        return { label: "无效时间", state: "invalid" };
+      }
+
+      const expired = Date.now() >= date.getTime();
+      return {
+        label: expired ? "已过期" : "未过期",
+        state: expired ? "expired" : "valid"
+      };
+    }
+
+    function buildTimeClaims(payload) {
+      return ["iat", "nbf", "exp"].map((key) => {
+        const value = payload[key];
+        return {
+          key,
+          raw: value ?? "-",
+          local: typeof value === "number" ? formatDate(value) : "-"
+        };
+      });
+    }
+
+    function renderDecoded(result) {
+      output.textContent = "";
+      output.classList.remove("placeholder", "hidden");
+      errorBox.classList.add("hidden");
+
+      const grid = document.createElement("div");
+      grid.className = "decoded-grid";
+
+      grid.append(
+        createJsonBlock("Header", result.header, "Base64Url JSON"),
+        createJsonBlock("Payload", result.payload, "Claims"),
+        createClaimsBlock(result.timeClaims),
+        createSignatureBlock(result.signatureInfo)
+      );
+
+      output.append(grid);
+    }
+
+    function createJsonBlock(title, value, tag) {
+      const block = document.createElement("section");
+      block.className = "decoded-block";
+      block.innerHTML = `
+        <div class="block-head">
+          <span>${escapeHtml(title)}</span>
+          <span class="block-tag">${escapeHtml(tag)}</span>
+        </div>
+        <pre class="code">${highlightJson(JSON.stringify(value, null, 2))}</pre>
+      `;
+      return block;
+    }
+
+    function createClaimsBlock(claims) {
+      const block = document.createElement("section");
+      block.className = "decoded-block";
+      const claimHtml = claims.map((claim) => `
+        <div class="claim">
+          <div class="claim-label">${escapeHtml(claim.key)}</div>
+          <div class="claim-value">${escapeHtml(String(claim.raw))}<br>${escapeHtml(claim.local)}</div>
+        </div>
+      `).join("");
+
+      block.innerHTML = `
+        <div class="block-head">
+          <span>时间字段</span>
+          <span class="block-tag">Unix Seconds</span>
+        </div>
+        <div class="claims">${claimHtml}</div>
+      `;
+      return block;
+    }
+
+    function createSignatureBlock(signatureInfo) {
+      const block = document.createElement("section");
+      block.className = "decoded-block";
+      block.innerHTML = `
+        <div class="block-head">
+          <span>Signature</span>
+          <span class="block-tag">未校验</span>
+        </div>
+        <pre class="signature-info">${escapeHtml([
+          `algorithm: ${signatureInfo.algorithm}`,
+          `present: ${signatureInfo.present}`,
+          `length: ${signatureInfo.length}`,
+          `preview: ${signatureInfo.preview}`,
+          `verified: ${signatureInfo.verified}`,
+          `note: ${signatureInfo.note}`
+        ].join("\n"))}</pre>
+      `;
+      return block;
+    }
+
+    function highlightJson(json) {
+      return json.replace(/"(?:\\.|[^"\\])*"\s*:|"(?:\\.|[^"\\])*"|-?\d+(?:\.\d+)?\b|\btrue\b|\bfalse\b|\bnull\b/g, (token) => {
+        if (token.endsWith(":")) {
+          return `<span class="json-key">${escapeHtml(token.slice(0, -1).trimEnd())}</span><span class="json-punctuation">:</span>`;
+        }
+        if (token.startsWith('"')) {
+          return `<span class="json-string">${escapeHtml(token)}</span>`;
+        }
+        if (token === "true" || token === "false") {
+          return `<span class="json-boolean">${token}</span>`;
+        }
+        if (token === "null") {
+          return '<span class="json-null">null</span>';
+        }
+        return `<span class="json-number">${token}</span>`;
+      });
+    }
+
+    function formatDate(seconds) {
+      const date = new Date(seconds * 1000);
+      if (Number.isNaN(date.getTime())) {
+        return "-";
+      }
+      return date.toLocaleString("zh-CN", { hour12: false });
+    }
+
+    function renderEmpty() {
+      decodedText = "";
+      output.textContent = "解析后的 Header、Payload 和签名信息会显示在这里。";
+      output.classList.add("placeholder");
+      output.classList.remove("hidden");
+      errorBox.classList.add("hidden");
+      setStatus("", "等待输入 JWT");
+      algMetric.textContent = "算法：-";
+      typMetric.textContent = "类型：-";
+      expMetric.textContent = "过期：-";
+      sigMetric.textContent = "签名：-";
+      partMetric.textContent = "段数：0";
+    }
+
+    function setStatus(state, message) {
+      statusStrip.classList.remove("valid", "invalid");
+      if (state) {
+        statusStrip.classList.add(state);
+      }
+      statusText.textContent = message;
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    renderEmpty();
+  </script>
+</body>
+
+</html>
