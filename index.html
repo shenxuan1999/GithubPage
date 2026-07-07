@@ -1558,6 +1558,7 @@
     (() => {
       const cardPageSize = 3;
       const folderPageSize = 4;
+      const ignoredFolders = new Set(["visitor"]);
       const library = document.querySelector("[data-folder-library]");
 
       if (!library) {
@@ -1726,7 +1727,7 @@
           const name = cleanText(group.name || group.folder);
           const files = Array.isArray(group.tools) ? group.tools : [];
 
-          if (!name) {
+          if (!name || ignoredFolders.has(name.toLowerCase())) {
             return null;
           }
 

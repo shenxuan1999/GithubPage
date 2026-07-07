@@ -3,7 +3,7 @@ const path = require("node:path");
 
 const root = __dirname;
 const outputFile = path.join(root, "tools.json");
-const excludedFolders = new Set([".git", ".github", "node_modules"]);
+const excludedFolders = new Set([".git", ".github", "node_modules", "visitor"]);
 
 const decodeEntities = (value) => {
   return value
@@ -57,7 +57,7 @@ const readPageInfo = (folderName, fileName) => {
 
 const folders = fs.readdirSync(root, { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
-  .filter((entry) => !entry.name.startsWith(".") && !excludedFolders.has(entry.name))
+  .filter((entry) => !entry.name.startsWith(".") && !excludedFolders.has(entry.name.toLowerCase()))
   .sort((first, second) => first.name.localeCompare(second.name, "zh-Hans-CN", {
     numeric: true,
     sensitivity: "base"
