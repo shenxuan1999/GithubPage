@@ -43,7 +43,7 @@
         {
           "file": "ToCsharp.html",
           "title": "JSON 转 C# 类",
-          "description": "自动识别 JSON 结构，按 Pascal 命名生成 private class 和属性注释。",
+          "description": "自动识别 JSON 结构，按 Pascal 命名生成 public class 和属性注释。",
           "href": "Json/ToCsharp.html",
           "tags": [
             "Json",

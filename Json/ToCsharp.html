@@ -525,7 +525,7 @@
         </div>
         <div>
           <h1>JSON 转 C# 类</h1>
-          <p class="subtitle">自动识别 JSON 结构，按 Pascal 命名生成 private class 和属性注释。</p>
+          <p class="subtitle">自动识别 JSON 结构，按 Pascal 命名生成 public class 和属性注释。</p>
         </div>
       </div>
       <div class="actions">
@@ -978,7 +978,7 @@
     function renderCsharp(classes, nullable) {
       return classes.map((classModel) => {
         const lines = [
-          `    private class ${classModel.name}`,
+          `    public class ${classModel.name}`,
           "    {"
         ];
 

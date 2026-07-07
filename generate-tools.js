@@ -1,5 +1,6 @@
 const fs = require("node:fs");
 const path = require("node:path");
+const { execSync } = require("node:child_process");
 
 const root = __dirname;
 const outputFile = path.join(root, "tools.json");
@@ -31,7 +32,30 @@ const prettifyName = (name) => {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 };
 
-const readPageInfo = (folderName, fileName) => {
+const getTrackedFolderNames = () => {
+  try {
+    const files = execSync("git ls-files", {
+      cwd: root,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"]
+    }).split(/\r?\n/);
+    const names = new Map();
+
+    files.forEach((file) => {
+      const [folderName] = file.split("/");
+
+      if (folderName && !folderName.includes(".")) {
+        names.set(folderName.toLowerCase(), folderName);
+      }
+    });
+
+    return names;
+  } catch (error) {
+    return new Map();
+  }
+};
+
+const readPageInfo = (folderName, hrefFolderName, fileName) => {
   const html = fs.readFileSync(path.join(root, folderName, fileName), "utf8");
   const title = matchText(html, /<h1[^>]*>([\s\S]*?)<\/h1>/i) ||
     matchText(html, /<title[^>]*>([\s\S]*?)<\/title>/i) ||
@@ -50,10 +74,12 @@ const readPageInfo = (folderName, fileName) => {
     file: fileName,
     title,
     description,
-    href: `${encodeURIComponent(folderName)}/${encodeURIComponent(fileName)}`,
+    href: `${encodeURIComponent(hrefFolderName)}/${encodeURIComponent(fileName)}`,
     tags
   };
 };
+
+const trackedFolderNames = getTrackedFolderNames();
 
 const folders = fs.readdirSync(root, { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
@@ -65,6 +91,7 @@ const folders = fs.readdirSync(root, { withFileTypes: true })
 
 const groups = folders.map((folder) => {
   const folderPath = path.join(root, folder.name);
+  const hrefFolderName = trackedFolderNames.get(folder.name.toLowerCase()) || folder.name;
   const htmlFiles = fs.readdirSync(folderPath, { withFileTypes: true })
     .filter((entry) => entry.isFile() && /\.html$/i.test(entry.name))
     .map((entry) => entry.name)
@@ -85,7 +112,7 @@ const groups = folders.map((folder) => {
 
   return {
     name: folder.name,
-    tools: htmlFiles.map((fileName) => readPageInfo(folder.name, fileName))
+    tools: htmlFiles.map((fileName) => readPageInfo(folder.name, hrefFolderName, fileName))
   };
 });
 
