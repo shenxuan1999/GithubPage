@@ -1,0 +1,1632 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cron 表达式生成器</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #050505;
+      --panel: #111317;
+      --text: #f5f7fb;
+      --muted: #9aa4b2;
+      --muted-strong: #c9d1dc;
+      --border: rgba(255, 255, 255, 0.12);
+      --border-strong: rgba(255, 255, 255, 0.24);
+      --success: #2dd4bf;
+      --danger: #fb7185;
+      --warning: #f59e0b;
+      --shadow: 0 28px 80px rgba(0, 0, 0, 0.44);
+      --mono: Consolas, "SFMono-Regular", "Liberation Mono", Menlo, monospace;
+      --sans: Inter, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 260px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        var(--bg);
+      background-size: auto, 80px 80px, 80px 80px, auto;
+      color: var(--text);
+      font-family: var(--sans);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(120deg, rgba(47, 125, 246, 0.16), transparent 30%, transparent 72%, rgba(45, 212, 191, 0.12)),
+        linear-gradient(180deg, transparent, rgba(5, 5, 5, 0.86) 78%);
+      z-index: -1;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .app {
+      width: min(1480px, calc(100vw - 40px));
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 22px 0 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 0 2px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .mark {
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04)),
+        #090a0c;
+      color: #ffffff;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+      flex: 0 0 auto;
+    }
+
+    .mark svg {
+      width: 25px;
+      height: 25px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 36px;
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .button {
+      min-height: 38px;
+      border-radius: 8px;
+      padding: 0 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+      white-space: nowrap;
+    }
+
+    .button:hover,
+    .button:focus-visible {
+      border-color: var(--border-strong);
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    .button.primary {
+      color: #050505;
+      background: #ffffff;
+      border-color: #ffffff;
+      font-weight: 700;
+    }
+
+    .button.primary:hover,
+    .button.primary:focus-visible {
+      background: #eef3ff;
+      border-color: #eef3ff;
+    }
+
+    .button svg {
+      width: 17px;
+      height: 17px;
+      stroke-width: 2.2;
+      flex: 0 0 auto;
+    }
+
+    .status-strip {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) repeat(4, auto);
+      align-items: center;
+      gap: 10px;
+      padding: 13px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035)),
+        rgba(17, 19, 23, 0.86);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .status-main {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--warning);
+      box-shadow: 0 0 0 4px rgba(184, 107, 0, 0.12);
+      flex: 0 0 auto;
+    }
+
+    .status-strip.valid .status-dot {
+      background: var(--success);
+      box-shadow: 0 0 0 4px rgba(45, 212, 191, 0.14), 0 0 18px rgba(45, 212, 191, 0.58);
+    }
+
+    .status-strip.invalid .status-dot {
+      background: var(--danger);
+      box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.14), 0 0 18px rgba(251, 113, 133, 0.34);
+    }
+
+    .status-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .metric {
+      min-height: 30px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.055);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .workspace {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(420px, 0.95fr);
+      gap: 18px;
+    }
+
+    .pane {
+      min-height: 560px;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035)),
+        var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .pane-head {
+      height: 58px;
+      padding: 0 14px 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.045);
+    }
+
+    .pane-title {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-weight: 700;
+      color: var(--muted-strong);
+    }
+
+    .pane-title svg {
+      width: 18px;
+      height: 18px;
+      color: var(--success);
+      flex: 0 0 auto;
+    }
+
+    .pane-body {
+      flex: 1;
+      min-height: 0;
+      padding: 16px;
+      overflow: auto;
+      background: #080b10;
+    }
+
+    .preset-grid {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .preset-btn,
+    .tab-btn,
+    .chip-btn {
+      min-height: 34px;
+      border-radius: 8px;
+      padding: 0 11px;
+      color: var(--muted-strong);
+      background: rgba(255, 255, 255, 0.055);
+      border: 1px solid var(--border);
+      transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
+    }
+
+    .preset-btn:hover,
+    .tab-btn:hover,
+    .chip-btn:hover,
+    .tab-btn.active,
+    .chip-btn.active {
+      color: var(--text);
+      background: rgba(45, 212, 191, 0.13);
+      border-color: rgba(45, 212, 191, 0.34);
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .tab-btn {
+      width: 100%;
+      font-weight: 700;
+    }
+
+    .rule-panel {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .rule-head {
+      min-height: 46px;
+      padding: 0 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted-strong);
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.045);
+    }
+
+    .rule-hint {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 400;
+      white-space: nowrap;
+    }
+
+    .rule-options {
+      display: grid;
+      gap: 10px;
+      padding: 14px;
+    }
+
+    .option {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted-strong);
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .option input[type="radio"],
+    .option input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      accent-color: var(--success);
+      flex: 0 0 auto;
+    }
+
+    .option.active {
+      border-color: rgba(45, 212, 191, 0.36);
+      background: rgba(45, 212, 191, 0.09);
+    }
+
+    .inline-inputs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .number-input,
+    .select-input,
+    .expression-input {
+      min-height: 34px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.065);
+      outline: none;
+    }
+
+    .number-input {
+      width: 76px;
+      padding: 0 9px;
+    }
+
+    .select-input {
+      min-width: 118px;
+      padding: 0 9px;
+    }
+
+    .number-input:focus,
+    .select-input:focus,
+    .expression-input:focus {
+      border-color: rgba(45, 212, 191, 0.5);
+    }
+
+    .choice-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+      gap: 8px;
+      padding: 0 14px 14px;
+    }
+
+    .choice-chip {
+      min-height: 34px;
+      padding: 0 9px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted-strong);
+      background: rgba(255, 255, 255, 0.035);
+      font-family: var(--mono);
+      font-size: 13px;
+      user-select: none;
+    }
+
+    .choice-chip input {
+      width: 14px;
+      height: 14px;
+      margin: 0;
+      accent-color: var(--success);
+    }
+
+    .choice-chip:has(input:checked) {
+      border-color: rgba(45, 212, 191, 0.42);
+      background: rgba(45, 212, 191, 0.12);
+      color: var(--text);
+    }
+
+    .result-stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    .expression-box {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .expression-input {
+      width: 100%;
+      min-height: 46px;
+      padding: 0 13px;
+      color: #e9eef8;
+      font-family: var(--mono);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .parts-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .part {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .part-label {
+      padding: 7px 9px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.045);
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+    }
+
+    .part-value {
+      min-height: 38px;
+      padding: 9px;
+      color: #dbe7f7;
+      font-family: var(--mono);
+      font-size: 14px;
+      overflow-wrap: anywhere;
+    }
+
+    .preview-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .preview-head {
+      min-height: 42px;
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted-strong);
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.045);
+    }
+
+    .preview-list {
+      margin: 0;
+      padding: 12px;
+      list-style: none;
+      display: grid;
+      gap: 8px;
+      background: #080b10;
+    }
+
+    .preview-list li {
+      min-height: 34px;
+      padding: 7px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: #dbe7f7;
+      background: rgba(255, 255, 255, 0.035);
+      font-family: var(--mono);
+      font-size: 13px;
+    }
+
+    .notice {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 1080px) {
+      .app {
+        width: min(100vw - 24px, 820px);
+        padding: 14px 0;
+      }
+
+      .topbar,
+      .status-strip,
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .actions {
+        justify-content: flex-start;
+      }
+
+      h1 {
+        font-size: 30px;
+      }
+
+      .subtitle {
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .status-strip {
+        display: flex;
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .status-text {
+        white-space: normal;
+      }
+
+      .metric {
+        width: 100%;
+      }
+
+      .tabs {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .parts-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .expression-box {
+        grid-template-columns: 1fr;
+      }
+
+      .pane {
+        min-height: 420px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M12 6v6l4 2"></path>
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M3.6 9h16.8"></path>
+          </svg>
+        </div>
+        <div>
+          <h1>Cron 表达式生成器</h1>
+          <p class="subtitle">生成 Quartz 风格 Cron，支持秒、分钟、小时、日、月、周、年和最近运行时间预览。</p>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="button" id="resetBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M3 12a9 9 0 1 0 3-6.7"></path>
+            <path d="M3 3v6h6"></path>
+          </svg>
+          重置
+        </button>
+        <button class="button primary" id="copyBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <rect width="14" height="14" x="8" y="8" rx="2"></rect>
+            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+          </svg>
+          复制表达式
+        </button>
+      </div>
+    </header>
+
+    <section class="status-strip" id="statusStrip" aria-live="polite">
+      <div class="status-main">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span class="status-text" id="statusText">已生成 Cron 表达式</span>
+      </div>
+      <div class="metric" id="fieldMetric">字段：6</div>
+      <div class="metric" id="activeMetric">当前：秒</div>
+      <div class="metric" id="modeMetric">规则：每秒</div>
+      <div class="metric" id="nextMetric">下次：-</div>
+    </section>
+
+    <section class="workspace">
+      <article class="pane">
+        <div class="pane-head">
+          <div class="pane-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M4 21v-7"></path>
+              <path d="M4 10V3"></path>
+              <path d="M12 21v-9"></path>
+              <path d="M12 8V3"></path>
+              <path d="M20 21v-5"></path>
+              <path d="M20 12V3"></path>
+              <path d="M2 14h4"></path>
+              <path d="M10 8h4"></path>
+              <path d="M18 16h4"></path>
+            </svg>
+            生成规则
+          </div>
+        </div>
+        <div class="pane-body">
+          <div class="preset-grid" id="presetGrid"></div>
+          <div class="tabs" id="fieldTabs"></div>
+          <div class="rule-panel" id="rulePanel"></div>
+        </div>
+      </article>
+
+      <article class="pane">
+        <div class="pane-head">
+          <div class="pane-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="m18 16 4-4-4-4"></path>
+              <path d="m6 8-4 4 4 4"></path>
+              <path d="m14.5 4-5 16"></path>
+            </svg>
+            表达式结果
+          </div>
+        </div>
+        <div class="pane-body">
+          <div class="result-stack">
+            <div class="expression-box">
+              <input class="expression-input" id="expressionInput" type="text" spellcheck="false" aria-label="Cron 表达式">
+              <button class="button" id="applyExpressionBtn" type="button">解析表达式</button>
+            </div>
+
+            <div class="parts-grid" id="partsGrid"></div>
+
+            <section class="preview-card">
+              <div class="preview-head">
+                <span>最近 5 次运行时间</span>
+                <span class="rule-hint" id="timezoneHint"></span>
+              </div>
+              <ul class="preview-list" id="nextRuns"></ul>
+            </section>
+
+            <div class="notice">
+              年字段为非必填；日和周字段会按 Quartz 习惯互斥，选择周规则时日字段自动变成 <code>?</code>，选择日规则时周字段自动变成 <code>?</code>。
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const fieldTabs = document.querySelector("#fieldTabs");
+    const rulePanel = document.querySelector("#rulePanel");
+    const presetGrid = document.querySelector("#presetGrid");
+    const expressionInput = document.querySelector("#expressionInput");
+    const applyExpressionBtn = document.querySelector("#applyExpressionBtn");
+    const partsGrid = document.querySelector("#partsGrid");
+    const nextRuns = document.querySelector("#nextRuns");
+    const statusStrip = document.querySelector("#statusStrip");
+    const statusText = document.querySelector("#statusText");
+    const fieldMetric = document.querySelector("#fieldMetric");
+    const activeMetric = document.querySelector("#activeMetric");
+    const modeMetric = document.querySelector("#modeMetric");
+    const nextMetric = document.querySelector("#nextMetric");
+    const timezoneHint = document.querySelector("#timezoneHint");
+    const copyBtn = document.querySelector("#copyBtn");
+    const resetBtn = document.querySelector("#resetBtn");
+
+    const fieldOrder = ["second", "minute", "hour", "day", "month", "week", "year"];
+    const partLabels = ["秒", "分钟", "小时", "日", "月", "星期", "年"];
+    const weekOptions = [
+      ["MON", "周一"],
+      ["TUE", "周二"],
+      ["WED", "周三"],
+      ["THU", "周四"],
+      ["FRI", "周五"],
+      ["SAT", "周六"],
+      ["SUN", "周日"]
+    ];
+    const weekNameByJsDay = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+    const weekIndex = new Map(weekOptions.map(([value], index) => [value, index]));
+    const numberFields = {
+      second: { label: "秒", unit: "秒", min: 0, max: 59, everyText: "每秒", hint: "[, - * /]" },
+      minute: { label: "分钟", unit: "分钟", min: 0, max: 59, everyText: "每分钟", hint: "[, - * /]" },
+      hour: { label: "小时", unit: "小时", min: 0, max: 23, everyText: "每小时", hint: "[, - * /]" },
+      month: { label: "月", unit: "月", min: 1, max: 12, everyText: "每月", hint: "[, - * /]" }
+    };
+    const presets = [
+      { label: "每小时整点", active: "hour", values: ["0", "0", "*", "*", "*", "?", ""] },
+      { label: "每天零点", active: "hour", values: ["0", "0", "0", "*", "*", "?", ""] },
+      { label: "每天中午 12 点", active: "hour", values: ["0", "0", "12", "*", "*", "?", ""] },
+      { label: "每月 1 号零点", active: "day", values: ["0", "0", "0", "1", "*", "?", ""] },
+      { label: "每周一零点", active: "week", values: ["0", "0", "0", "?", "*", "MON", ""] }
+    ];
+
+    let state = createDefaultState();
+    let activeField = "second";
+    let generatedExpression = "";
+
+    function createDefaultState() {
+      return {
+        second: createNumberState(0, 59, "every"),
+        minute: createNumberState(0, 59, "every"),
+        hour: createNumberState(0, 23, "every"),
+        day: {
+          mode: "every",
+          rangeStart: 1,
+          rangeEnd: 2,
+          intervalStart: 1,
+          intervalStep: 1,
+          weekdayDay: 1,
+          specific: []
+        },
+        month: createNumberState(1, 12, "every"),
+        week: {
+          mode: "none",
+          rangeStart: "MON",
+          rangeEnd: "TUE",
+          nthWeek: 1,
+          nthDay: "MON",
+          lastDay: "MON",
+          specific: []
+        },
+        year: {
+          mode: "none",
+          rangeStart: new Date().getFullYear(),
+          rangeEnd: new Date().getFullYear() + 1
+        }
+      };
+    }
+
+    function createNumberState(min, max, mode) {
+      return {
+        mode,
+        rangeStart: min,
+        rangeEnd: Math.min(max, min + 2),
+        intervalStart: min,
+        intervalStep: 1,
+        specific: []
+      };
+    }
+
+    function render() {
+      renderPresets();
+      renderTabs();
+      renderRulePanel();
+      renderExpression();
+    }
+
+    function renderPresets() {
+      presetGrid.innerHTML = presets.map((preset, index) => {
+        return `<button class="preset-btn" type="button" data-preset="${index}">${preset.label}</button>`;
+      }).join("");
+    }
+
+    function renderTabs() {
+      fieldTabs.innerHTML = fieldOrder.map((key) => {
+        const label = getFieldLabel(key);
+        return `<button class="tab-btn ${key === activeField ? "active" : ""}" type="button" data-tab="${key}">${label}</button>`;
+      }).join("");
+    }
+
+    function renderRulePanel() {
+      const label = getFieldLabel(activeField);
+      const hint = getFieldHint(activeField);
+      rulePanel.innerHTML = `
+        <div class="rule-head">
+          <span>${label}</span>
+          <span class="rule-hint">允许的通配符 ${hint}</span>
+        </div>
+        ${renderFieldOptions(activeField)}
+      `;
+    }
+
+    function renderFieldOptions(key) {
+      if (numberFields[key]) {
+        return renderNumberField(key, numberFields[key]);
+      }
+      if (key === "day") {
+        return renderDayField();
+      }
+      if (key === "week") {
+        return renderWeekField();
+      }
+      return renderYearField();
+    }
+
+    function renderNumberField(key, meta) {
+      const value = state[key];
+      return `
+        <div class="rule-options">
+          ${radioOption(key, "every", meta.everyText)}
+          ${radioOption(key, "range", `周期从 ${numberInput(key, "rangeStart", meta.min, meta.max)} - ${numberInput(key, "rangeEnd", meta.min, meta.max)} ${meta.unit}`)}
+          ${radioOption(key, "interval", `从 ${numberInput(key, "intervalStart", meta.min, meta.max)} ${meta.unit}开始，每 ${numberInput(key, "intervalStep", 1, meta.max || 1)} ${meta.unit}执行一次`)}
+          ${radioOption(key, "specific", "指定")}
+        </div>
+        ${choiceGrid(key, createNumberChoices(meta.min, meta.max), value.specific)}
+      `;
+    }
+
+    function renderDayField() {
+      const selected = state.day.specific;
+      return `
+        <div class="rule-options">
+          ${radioOption("day", "every", "每日")}
+          ${radioOption("day", "none", "不指定")}
+          ${radioOption("day", "range", `周期从 ${numberInput("day", "rangeStart", 1, 31)} - ${numberInput("day", "rangeEnd", 1, 31)} 日`)}
+          ${radioOption("day", "interval", `从 ${numberInput("day", "intervalStart", 1, 31)} 日开始，每 ${numberInput("day", "intervalStep", 1, 31)} 天执行一次`)}
+          ${radioOption("day", "weekday", `每月 ${numberInput("day", "weekdayDay", 1, 31)} 号最近的工作日`)}
+          ${radioOption("day", "last", "每月最后一天")}
+          ${radioOption("day", "specific", "指定")}
+        </div>
+        ${choiceGrid("day", createNumberChoices(1, 31), selected)}
+      `;
+    }
+
+    function renderWeekField() {
+      const selected = state.week.specific;
+      return `
+        <div class="rule-options">
+          ${radioOption("week", "none", "不指定")}
+          ${radioOption("week", "every", "每周")}
+          ${radioOption("week", "range", `周期从 ${weekSelect("week", "rangeStart")} - ${weekSelect("week", "rangeEnd")}`)}
+          ${radioOption("week", "nth", `第 ${numberInput("week", "nthWeek", 1, 5)} 周的 ${weekSelect("week", "nthDay")}`)}
+          ${radioOption("week", "last", `本月最后一个 ${weekSelect("week", "lastDay")}`)}
+          ${radioOption("week", "specific", "指定")}
+        </div>
+        ${choiceGrid("week", weekOptions, selected)}
+      `;
+    }
+
+    function renderYearField() {
+      const currentYear = new Date().getFullYear();
+      return `
+        <div class="rule-options">
+          ${radioOption("year", "none", "不指定")}
+          ${radioOption("year", "every", "每年")}
+          ${radioOption("year", "range", `周期从 ${numberInput("year", "rangeStart", currentYear - 20, currentYear + 80)} - ${numberInput("year", "rangeEnd", currentYear - 20, currentYear + 80)}`)}
+        </div>
+      `;
+    }
+
+    function radioOption(field, mode, content) {
+      const active = state[field].mode === mode;
+      return `
+        <label class="option ${active ? "active" : ""}">
+          <input type="radio" name="${field}-mode" data-mode-field="${field}" data-mode="${mode}" ${active ? "checked" : ""}>
+          <span class="inline-inputs">${content}</span>
+        </label>
+      `;
+    }
+
+    function numberInput(field, prop, min, max) {
+      const value = clampNumber(state[field][prop], min, max);
+      state[field][prop] = value;
+      return `<input class="number-input" type="number" min="${min}" max="${max}" step="1" value="${value}" data-number-field="${field}" data-prop="${prop}">`;
+    }
+
+    function weekSelect(field, prop) {
+      const value = state[field][prop];
+      const options = weekOptions.map(([code, label]) => {
+        return `<option value="${code}" ${value === code ? "selected" : ""}>${code} ${label}</option>`;
+      }).join("");
+      return `<select class="select-input" data-select-field="${field}" data-prop="${prop}">${options}</select>`;
+    }
+
+    function choiceGrid(field, choices, selected) {
+      const html = choices.map(([value, label]) => {
+        const isChecked = selected.includes(String(value));
+        return `
+          <label class="choice-chip">
+            <input type="checkbox" value="${value}" data-choice-field="${field}" ${isChecked ? "checked" : ""}>
+            <span>${label}</span>
+          </label>
+        `;
+      }).join("");
+      return `<div class="choice-grid">${html}</div>`;
+    }
+
+    function createNumberChoices(min, max) {
+      const choices = [];
+      for (let value = min; value <= max; value += 1) {
+        const label = max >= 59 ? String(value).padStart(2, "0") : String(value);
+        choices.push([String(value), label]);
+      }
+      return choices;
+    }
+
+    function renderExpression() {
+      const parts = buildParts();
+      generatedExpression = parts.year ? [parts.second, parts.minute, parts.hour, parts.day, parts.month, parts.week, parts.year].join(" ") : [parts.second, parts.minute, parts.hour, parts.day, parts.month, parts.week].join(" ");
+      expressionInput.value = generatedExpression;
+
+      const values = [parts.second, parts.minute, parts.hour, parts.day, parts.month, parts.week, parts.year || "-"];
+      partsGrid.innerHTML = partLabels.map((label, index) => `
+        <div class="part">
+          <div class="part-label">${label}</div>
+          <div class="part-value">${escapeHtml(values[index])}</div>
+        </div>
+      `).join("");
+
+      const preview = computeNextRuns(generatedExpression, 5);
+      if (preview.ok) {
+        nextRuns.innerHTML = preview.runs.map((date) => `<li>${formatDate(date)}</li>`).join("");
+        setStatus("valid", "已生成 Cron 表达式");
+        nextMetric.textContent = `下次：${preview.runs[0] ? formatShortDate(preview.runs[0]) : "-"}`;
+      } else {
+        nextRuns.innerHTML = `<li>${escapeHtml(preview.message)}</li>`;
+        setStatus("invalid", "表达式可生成，但暂无法计算运行时间");
+        nextMetric.textContent = "下次：-";
+      }
+
+      fieldMetric.textContent = `字段：${parts.year ? 7 : 6}`;
+      activeMetric.textContent = `当前：${getFieldLabel(activeField)}`;
+      modeMetric.textContent = `规则：${getModeLabel(activeField, state[activeField].mode)}`;
+      timezoneHint.textContent = Intl.DateTimeFormat().resolvedOptions().timeZone || "本地时区";
+    }
+
+    function buildParts() {
+      return {
+        second: buildNumberPart("second"),
+        minute: buildNumberPart("minute"),
+        hour: buildNumberPart("hour"),
+        day: buildDayPart(),
+        month: buildNumberPart("month"),
+        week: buildWeekPart(),
+        year: buildYearPart()
+      };
+    }
+
+    function buildNumberPart(key) {
+      const value = state[key];
+      if (value.mode === "range") {
+        const start = Math.min(Number(value.rangeStart), Number(value.rangeEnd));
+        const end = Math.max(Number(value.rangeStart), Number(value.rangeEnd));
+        return `${start}-${end}`;
+      }
+      if (value.mode === "interval") {
+        return `${value.intervalStart}/${Math.max(1, Number(value.intervalStep))}`;
+      }
+      if (value.mode === "specific") {
+        return value.specific.length ? sortNumericStrings(value.specific).join(",") : "*";
+      }
+      return "*";
+    }
+
+    function buildDayPart() {
+      const value = state.day;
+      if (value.mode === "none") {
+        return "?";
+      }
+      if (value.mode === "range") {
+        const start = Math.min(Number(value.rangeStart), Number(value.rangeEnd));
+        const end = Math.max(Number(value.rangeStart), Number(value.rangeEnd));
+        return `${start}-${end}`;
+      }
+      if (value.mode === "interval") {
+        return `${value.intervalStart}/${Math.max(1, Number(value.intervalStep))}`;
+      }
+      if (value.mode === "weekday") {
+        return `${value.weekdayDay}W`;
+      }
+      if (value.mode === "last") {
+        return "L";
+      }
+      if (value.mode === "specific") {
+        return value.specific.length ? sortNumericStrings(value.specific).join(",") : "*";
+      }
+      return "*";
+    }
+
+    function buildWeekPart() {
+      const value = state.week;
+      if (value.mode === "none") {
+        return "?";
+      }
+      if (value.mode === "range") {
+        return `${value.rangeStart}-${value.rangeEnd}`;
+      }
+      if (value.mode === "nth") {
+        return `${value.nthDay}#${value.nthWeek}`;
+      }
+      if (value.mode === "last") {
+        return `${value.lastDay}L`;
+      }
+      if (value.mode === "specific") {
+        return value.specific.length ? sortWeekValues(value.specific).join(",") : "*";
+      }
+      return "*";
+    }
+
+    function buildYearPart() {
+      const value = state.year;
+      if (value.mode === "none") {
+        return "";
+      }
+      if (value.mode === "range") {
+        const start = Math.min(Number(value.rangeStart), Number(value.rangeEnd));
+        const end = Math.max(Number(value.rangeStart), Number(value.rangeEnd));
+        return `${start}-${end}`;
+      }
+      return "*";
+    }
+
+    function setMode(field, mode) {
+      state[field].mode = mode;
+      if (field === "day" && mode !== "none") {
+        state.week.mode = "none";
+      }
+      if (field === "week" && mode !== "none") {
+        state.day.mode = "none";
+      }
+      renderTabs();
+      renderRulePanel();
+      renderExpression();
+    }
+
+    function applyPreset(index) {
+      const preset = presets[index];
+      state = createDefaultState();
+      applyPartsToState(preset.values);
+      activeField = preset.active;
+      render();
+    }
+
+    function applyPartsToState(parts) {
+      applyNumberPart("second", parts[0], 0, 59);
+      applyNumberPart("minute", parts[1], 0, 59);
+      applyNumberPart("hour", parts[2], 0, 23);
+      applyDayPart(parts[3]);
+      applyNumberPart("month", parts[4], 1, 12);
+      applyWeekPart(parts[5]);
+      applyYearPart(parts[6] || "");
+    }
+
+    function applyNumberPart(key, part, min, max) {
+      const value = createNumberState(min, max, "every");
+      if (/^\d+$/.test(part)) {
+        value.mode = "specific";
+        value.specific = [part];
+      } else if (/^\d+-\d+$/.test(part)) {
+        const [start, end] = part.split("-").map(Number);
+        value.mode = "range";
+        value.rangeStart = start;
+        value.rangeEnd = end;
+      } else if (/^\d+\/\d+$/.test(part)) {
+        const [start, step] = part.split("/").map(Number);
+        value.mode = "interval";
+        value.intervalStart = start;
+        value.intervalStep = step;
+      } else if (part.includes(",")) {
+        value.mode = "specific";
+        value.specific = part.split(",").filter(Boolean);
+      }
+      state[key] = value;
+    }
+
+    function applyDayPart(part) {
+      const value = state.day;
+      if (part === "?") {
+        value.mode = "none";
+      } else if (part === "L") {
+        value.mode = "last";
+      } else if (/^\d+W$/.test(part)) {
+        value.mode = "weekday";
+        value.weekdayDay = Number(part.replace("W", ""));
+      } else if (/^\d+$/.test(part)) {
+        value.mode = "specific";
+        value.specific = [part];
+      } else if (/^\d+-\d+$/.test(part)) {
+        const [start, end] = part.split("-").map(Number);
+        value.mode = "range";
+        value.rangeStart = start;
+        value.rangeEnd = end;
+      } else if (/^\d+\/\d+$/.test(part)) {
+        const [start, step] = part.split("/").map(Number);
+        value.mode = "interval";
+        value.intervalStart = start;
+        value.intervalStep = step;
+      } else if (part.includes(",")) {
+        value.mode = "specific";
+        value.specific = part.split(",").filter(Boolean);
+      } else {
+        value.mode = "every";
+      }
+    }
+
+    function applyWeekPart(part) {
+      const value = state.week;
+      if (part === "?") {
+        value.mode = "none";
+      } else if (/^[A-Z]{3}L$/.test(part)) {
+        value.mode = "last";
+        value.lastDay = part.replace("L", "");
+      } else if (/^[A-Z]{3}#\d$/.test(part)) {
+        const [day, nth] = part.split("#");
+        value.mode = "nth";
+        value.nthDay = day;
+        value.nthWeek = Number(nth);
+      } else if (/^[A-Z]{3}-[A-Z]{3}$/.test(part)) {
+        const [start, end] = part.split("-");
+        value.mode = "range";
+        value.rangeStart = start;
+        value.rangeEnd = end;
+      } else if (part.includes(",")) {
+        value.mode = "specific";
+        value.specific = part.split(",").filter(Boolean).map(normalizeWeekName);
+      } else if (part !== "*") {
+        value.mode = "specific";
+        value.specific = [normalizeWeekName(part)];
+      } else {
+        value.mode = "every";
+      }
+    }
+
+    function applyYearPart(part) {
+      const value = state.year;
+      if (!part) {
+        value.mode = "none";
+      } else if (/^\d+-\d+$/.test(part)) {
+        const [start, end] = part.split("-").map(Number);
+        value.mode = "range";
+        value.rangeStart = start;
+        value.rangeEnd = end;
+      } else {
+        value.mode = "every";
+      }
+    }
+
+    function computeNextRuns(expression, count) {
+      try {
+        const parts = expression.trim().split(/\s+/);
+        if (parts.length !== 6 && parts.length !== 7) {
+          return { ok: false, message: "Cron 表达式需要 6 或 7 个字段。" };
+        }
+
+        const secondSet = expandNumberExpression(parts[0], 0, 59);
+        const minuteSet = expandNumberExpression(parts[1], 0, 59);
+        const hourSet = expandNumberExpression(parts[2], 0, 23);
+        const monthSet = expandNumberExpression(parts[4], 1, 12);
+        const yearExpr = parts[6] || "";
+        const start = new Date();
+        start.setMilliseconds(0);
+        start.setSeconds(start.getSeconds() + 1);
+
+        const limit = new Date(start);
+        limit.setFullYear(limit.getFullYear() + 8);
+        const runs = [];
+        const cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+
+        while (cursor <= limit && runs.length < count) {
+          const year = cursor.getFullYear();
+          const month = cursor.getMonth() + 1;
+          if (matchesYear(year, yearExpr) && monthSet.includes(month) && matchesDay(cursor, parts[3]) && matchesWeek(cursor, parts[5])) {
+            const sameDay = cursor.getFullYear() === start.getFullYear() && cursor.getMonth() === start.getMonth() && cursor.getDate() === start.getDate();
+            for (const hour of hourSet) {
+              if (sameDay && hour < start.getHours()) {
+                continue;
+              }
+              for (const minute of minuteSet) {
+                if (sameDay && hour === start.getHours() && minute < start.getMinutes()) {
+                  continue;
+                }
+                for (const second of secondSet) {
+                  if (sameDay && hour === start.getHours() && minute === start.getMinutes() && second < start.getSeconds()) {
+                    continue;
+                  }
+                  const candidate = new Date(year, cursor.getMonth(), cursor.getDate(), hour, minute, second);
+                  if (candidate >= start) {
+                    runs.push(candidate);
+                    if (runs.length >= count) {
+                      return { ok: true, runs };
+                    }
+                  }
+                }
+              }
+            }
+          }
+          cursor.setDate(cursor.getDate() + 1);
+        }
+
+        return runs.length ? { ok: true, runs } : { ok: false, message: "未来 8 年内没有匹配的运行时间。" };
+      } catch (error) {
+        return { ok: false, message: error.message || "无法计算运行时间。" };
+      }
+    }
+
+    function expandNumberExpression(expr, min, max) {
+      if (expr === "*" || expr === "?") {
+        return range(min, max);
+      }
+
+      const values = new Set();
+      expr.split(",").forEach((part) => {
+        if (/^\d+$/.test(part)) {
+          values.add(clampNumber(Number(part), min, max));
+          return;
+        }
+        if (/^\d+-\d+$/.test(part)) {
+          const [startRaw, endRaw] = part.split("-").map(Number);
+          const start = clampNumber(Math.min(startRaw, endRaw), min, max);
+          const end = clampNumber(Math.max(startRaw, endRaw), min, max);
+          range(start, end).forEach((value) => values.add(value));
+          return;
+        }
+        if (/^\d+\/\d+$/.test(part)) {
+          const [startRaw, stepRaw] = part.split("/").map(Number);
+          const start = clampNumber(startRaw, min, max);
+          const step = Math.max(1, stepRaw);
+          for (let value = start; value <= max; value += step) {
+            values.add(value);
+          }
+          return;
+        }
+        if (/^\d+-\d+\/\d+$/.test(part)) {
+          const [rangePart, stepPart] = part.split("/");
+          const [startRaw, endRaw] = rangePart.split("-").map(Number);
+          const start = clampNumber(Math.min(startRaw, endRaw), min, max);
+          const end = clampNumber(Math.max(startRaw, endRaw), min, max);
+          const step = Math.max(1, Number(stepPart));
+          for (let value = start; value <= end; value += step) {
+            values.add(value);
+          }
+        }
+      });
+
+      if (!values.size) {
+        throw new Error(`字段 ${expr} 无法解析为 ${min}-${max} 范围内的值。`);
+      }
+      return [...values].sort((a, b) => a - b);
+    }
+
+    function matchesYear(year, expr) {
+      if (!expr || expr === "*") {
+        return true;
+      }
+      return expandNumberExpression(expr, 1970, 3000).includes(year);
+    }
+
+    function matchesDay(date, expr) {
+      if (expr === "?" || expr === "*") {
+        return true;
+      }
+      const day = date.getDate();
+      const last = lastDayOfMonth(date.getFullYear(), date.getMonth());
+      if (expr === "L") {
+        return day === last;
+      }
+      if (/^\d+W$/.test(expr)) {
+        return day === nearestWeekday(date.getFullYear(), date.getMonth(), Number(expr.replace("W", "")));
+      }
+      return expandNumberExpression(expr, 1, 31).includes(day);
+    }
+
+    function matchesWeek(date, expr) {
+      if (expr === "?" || expr === "*") {
+        return true;
+      }
+
+      const weekName = weekNameByJsDay[date.getDay()];
+      const normalized = expr.split(",").map(normalizeWeekName).join(",");
+
+      if (/^[A-Z]{3}L$/.test(normalized)) {
+        const target = normalized.replace("L", "");
+        return weekName === target && date.getDate() + 7 > lastDayOfMonth(date.getFullYear(), date.getMonth());
+      }
+
+      if (/^[A-Z]{3}#\d$/.test(normalized)) {
+        const [target, nthRaw] = normalized.split("#");
+        return weekName === target && getWeekdayOccurrence(date) === Number(nthRaw);
+      }
+
+      if (/^[A-Z]{3}-[A-Z]{3}$/.test(normalized)) {
+        const [start, end] = normalized.split("-");
+        return weekNameInRange(weekName, start, end);
+      }
+
+      return normalized.split(",").includes(weekName);
+    }
+
+    function nearestWeekday(year, monthIndex, day) {
+      const last = lastDayOfMonth(year, monthIndex);
+      const targetDay = clampNumber(day, 1, last);
+      const target = new Date(year, monthIndex, targetDay);
+      const jsDay = target.getDay();
+      if (jsDay === 6) {
+        return targetDay === 1 ? 3 : targetDay - 1;
+      }
+      if (jsDay === 0) {
+        return targetDay === last ? targetDay - 2 : targetDay + 1;
+      }
+      return targetDay;
+    }
+
+    function getWeekdayOccurrence(date) {
+      let count = 0;
+      for (let day = 1; day <= date.getDate(); day += 1) {
+        const current = new Date(date.getFullYear(), date.getMonth(), day);
+        if (current.getDay() === date.getDay()) {
+          count += 1;
+        }
+      }
+      return count;
+    }
+
+    function weekNameInRange(current, start, end) {
+      const currentIndex = weekIndex.get(current);
+      const startIndex = weekIndex.get(start);
+      const endIndex = weekIndex.get(end);
+      if (currentIndex === undefined || startIndex === undefined || endIndex === undefined) {
+        return false;
+      }
+      if (startIndex <= endIndex) {
+        return currentIndex >= startIndex && currentIndex <= endIndex;
+      }
+      return currentIndex >= startIndex || currentIndex <= endIndex;
+    }
+
+    function normalizeWeekName(value) {
+      const text = String(value).trim().toUpperCase();
+      const numericMap = { "1": "MON", "2": "TUE", "3": "WED", "4": "THU", "5": "FRI", "6": "SAT", "7": "SUN" };
+      return numericMap[text] || text;
+    }
+
+    function getFieldLabel(key) {
+      const labels = { second: "秒", minute: "分钟", hour: "小时", day: "日", month: "月", week: "周", year: "年" };
+      return labels[key];
+    }
+
+    function getFieldHint(key) {
+      if (key === "day") {
+        return "[, - * / ? L W]";
+      }
+      if (key === "week") {
+        return "[, - * / ? L #]";
+      }
+      if (key === "year") {
+        return "[, - * /] 非必填";
+      }
+      return numberFields[key].hint;
+    }
+
+    function getModeLabel(field, mode) {
+      const labels = {
+        every: field === "year" ? "每年" : "每次",
+        none: "不指定",
+        range: "周期",
+        interval: "间隔",
+        weekday: "最近工作日",
+        last: "最后",
+        nth: "第 N 周",
+        specific: "指定"
+      };
+      return labels[mode] || mode;
+    }
+
+    function sortNumericStrings(values) {
+      return [...new Set(values.map(String))].sort((a, b) => Number(a) - Number(b));
+    }
+
+    function sortWeekValues(values) {
+      return [...new Set(values.map(normalizeWeekName))].sort((a, b) => weekIndex.get(a) - weekIndex.get(b));
+    }
+
+    function range(min, max) {
+      return Array.from({ length: max - min + 1 }, (_, index) => min + index);
+    }
+
+    function clampNumber(value, min, max) {
+      const number = Number(value);
+      if (Number.isNaN(number)) {
+        return min;
+      }
+      return Math.min(max, Math.max(min, Math.trunc(number)));
+    }
+
+    function lastDayOfMonth(year, monthIndex) {
+      return new Date(year, monthIndex + 1, 0).getDate();
+    }
+
+    function formatDate(date) {
+      return date.toLocaleString("zh-CN", { hour12: false });
+    }
+
+    function formatShortDate(date) {
+      return date.toLocaleString("zh-CN", {
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+      });
+    }
+
+    function setStatus(stateName, message) {
+      statusStrip.classList.remove("valid", "invalid");
+      if (stateName) {
+        statusStrip.classList.add(stateName);
+      }
+      statusText.textContent = message;
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    fieldTabs.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-tab]");
+      if (!button) {
+        return;
+      }
+      activeField = button.dataset.tab;
+      renderTabs();
+      renderRulePanel();
+      renderExpression();
+    });
+
+    presetGrid.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-preset]");
+      if (!button) {
+        return;
+      }
+      applyPreset(Number(button.dataset.preset));
+    });
+
+    rulePanel.addEventListener("change", (event) => {
+      const target = event.target;
+      if (target.matches("[data-mode-field]")) {
+        setMode(target.dataset.modeField, target.dataset.mode);
+        return;
+      }
+      if (target.matches("[data-number-field]")) {
+        const field = target.dataset.numberField;
+        const prop = target.dataset.prop;
+        state[field][prop] = clampNumber(target.value, Number(target.min), Number(target.max));
+        renderExpression();
+        return;
+      }
+      if (target.matches("[data-select-field]")) {
+        const field = target.dataset.selectField;
+        const prop = target.dataset.prop;
+        state[field][prop] = target.value;
+        renderExpression();
+        return;
+      }
+      if (target.matches("[data-choice-field]")) {
+        const field = target.dataset.choiceField;
+        state[field].mode = "specific";
+        const checked = [...rulePanel.querySelectorAll(`[data-choice-field="${field}"]:checked`)].map((item) => item.value);
+        state[field].specific = field === "week" ? checked.map(normalizeWeekName) : checked;
+        if (field === "day") {
+          state.week.mode = "none";
+        }
+        if (field === "week") {
+          state.day.mode = "none";
+        }
+        renderTabs();
+        renderRulePanel();
+        renderExpression();
+      }
+    });
+
+    rulePanel.addEventListener("input", (event) => {
+      const target = event.target;
+      if (!target.matches("[data-number-field]")) {
+        return;
+      }
+      const field = target.dataset.numberField;
+      const prop = target.dataset.prop;
+      state[field][prop] = clampNumber(target.value, Number(target.min), Number(target.max));
+      renderExpression();
+    });
+
+    applyExpressionBtn.addEventListener("click", () => {
+      const parts = expressionInput.value.trim().split(/\s+/);
+      if (parts.length !== 6 && parts.length !== 7) {
+        setStatus("invalid", "表达式需要 6 或 7 个字段");
+        return;
+      }
+      try {
+        state = createDefaultState();
+        applyPartsToState(parts);
+        activeField = inferActiveFieldFromParts(parts);
+        render();
+      } catch {
+        setStatus("invalid", "表达式解析失败");
+      }
+    });
+
+    expressionInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        applyExpressionBtn.click();
+      }
+    });
+
+    copyBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(generatedExpression);
+        setStatus("valid", "已复制 Cron 表达式");
+      } catch {
+        expressionInput.select();
+        document.execCommand("copy");
+        setStatus("valid", "已复制 Cron 表达式");
+      }
+    });
+
+    resetBtn.addEventListener("click", () => {
+      state = createDefaultState();
+      activeField = "second";
+      render();
+    });
+
+    function inferActiveFieldFromParts(parts) {
+      const [second, minute, hour, day, month, week, year = ""] = parts;
+      if (week && week !== "*" && week !== "?") {
+        return "week";
+      }
+      if (day && day !== "*" && day !== "?") {
+        return "day";
+      }
+      if (year) {
+        return "year";
+      }
+      if (month && month !== "*") {
+        return "month";
+      }
+      if (hour && hour !== "*") {
+        return "hour";
+      }
+      if (minute && minute !== "*") {
+        return "minute";
+      }
+      if (second && second !== "*") {
+        return "second";
+      }
+      return "second";
+    }
+
+    render();
+  </script>
+</body>
+
+</html>
