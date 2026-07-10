@@ -11,6 +11,16 @@
           "tags": [
             "Base64"
           ]
+        },
+        {
+          "file": "toBase64.html",
+          "title": "图片转 Base64",
+          "description": "选择或拖入 PNG、JPEG、WebP、GIF、SVG、BMP、ICO、AVIF 图片，生成可复制的 Base64。",
+          "href": "Base64/toBase64.html",
+          "tags": [
+            "Base64",
+            "HTML"
+          ]
         }
       ]
     },
@@ -41,10 +51,10 @@
           ]
         },
         {
-          "file": "ToCsharp.html",
+          "file": "toCsharp.html",
           "title": "JSON 转 C# 类",
           "description": "自动识别 JSON 结构，按 Pascal 命名生成 public class 和属性注释。",
-          "href": "Json/ToCsharp.html",
+          "href": "Json/toCsharp.html",
           "tags": [
             "Json",
             "HTML"

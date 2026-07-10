@@ -1,0 +1,1060 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>图片转 Base64</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #050505;
+      --panel: #111317;
+      --panel-soft: #171a20;
+      --text: #f5f7fb;
+      --muted: #9aa4b2;
+      --muted-strong: #c9d1dc;
+      --border: rgba(255, 255, 255, 0.12);
+      --border-strong: rgba(255, 255, 255, 0.24);
+      --primary: #2f7df6;
+      --success: #2dd4bf;
+      --danger: #fb7185;
+      --warning: #f59e0b;
+      --shadow: 0 28px 80px rgba(0, 0, 0, 0.44);
+      --mono: Consolas, "SFMono-Regular", "Liberation Mono", Menlo, monospace;
+      --sans: Inter, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 260px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        var(--bg);
+      background-size: auto, 80px 80px, 80px 80px, auto;
+      color: var(--text);
+      font-family: var(--sans);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(120deg, rgba(47, 125, 246, 0.16), transparent 30%, transparent 72%, rgba(45, 212, 191, 0.12)),
+        linear-gradient(180deg, transparent, rgba(5, 5, 5, 0.86) 78%);
+      z-index: -1;
+    }
+
+    button,
+    textarea,
+    input {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .app {
+      width: min(1480px, calc(100vw - 40px));
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 22px 0 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 0 2px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .mark {
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04)),
+        #090a0c;
+      color: #ffffff;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+      flex: 0 0 auto;
+    }
+
+    .mark svg {
+      width: 25px;
+      height: 25px;
+      stroke-width: 2.1;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 36px;
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .button {
+      min-height: 38px;
+      border-radius: 8px;
+      padding: 0 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+      white-space: nowrap;
+    }
+
+    .button:hover,
+    .button:focus-visible {
+      border-color: var(--border-strong);
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    .button.primary {
+      color: #050505;
+      background: #ffffff;
+      border-color: #ffffff;
+      font-weight: 700;
+    }
+
+    .button.primary:hover,
+    .button.primary:focus-visible {
+      background: #eef3ff;
+      border-color: #eef3ff;
+    }
+
+    .button svg {
+      width: 17px;
+      height: 17px;
+      stroke-width: 2.2;
+      flex: 0 0 auto;
+    }
+
+    .status-strip {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) repeat(4, auto);
+      align-items: center;
+      gap: 10px;
+      padding: 13px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035)),
+        rgba(17, 19, 23, 0.86);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .status-main {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--warning);
+      box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.13);
+      flex: 0 0 auto;
+    }
+
+    .status-strip.valid .status-dot {
+      background: var(--success);
+      box-shadow: 0 0 0 4px rgba(45, 212, 191, 0.14), 0 0 18px rgba(45, 212, 191, 0.58);
+    }
+
+    .status-strip.invalid .status-dot {
+      background: var(--danger);
+      box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.14), 0 0 18px rgba(251, 113, 133, 0.34);
+    }
+
+    .status-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .metric {
+      min-height: 30px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.055);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .workspace {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(420px, 0.9fr) minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .pane {
+      min-height: 540px;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035)),
+        var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .pane-head {
+      height: 58px;
+      padding: 0 14px 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.045);
+    }
+
+    .pane-title {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-weight: 700;
+      color: var(--muted-strong);
+    }
+
+    .pane-title svg {
+      width: 18px;
+      height: 18px;
+      color: var(--success);
+      flex: 0 0 auto;
+    }
+
+    .pane-tools {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+
+    .icon-button {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid transparent;
+      transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+    }
+
+    .icon-button:hover,
+    .icon-button:focus-visible {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--border-strong);
+      color: var(--text);
+      outline: none;
+    }
+
+    .icon-button svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2.1;
+    }
+
+    .drop-wrap {
+      flex: 1;
+      min-height: 0;
+      padding: 16px;
+      display: grid;
+      grid-template-rows: minmax(280px, 1fr) auto;
+      gap: 14px;
+      background: #080b10;
+    }
+
+    .drop-zone {
+      position: relative;
+      min-height: 360px;
+      border: 1px dashed var(--border-strong);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background:
+        linear-gradient(45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.05) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.05) 75%),
+        #0b0f15;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+      background-size: 20px 20px;
+      transition: border-color 160ms ease, background-color 160ms ease;
+    }
+
+    .drop-zone.dragging {
+      border-color: var(--success);
+      background-color: rgba(45, 212, 191, 0.08);
+    }
+
+    .file-input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .drop-empty {
+      max-width: 390px;
+      padding: 18px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.7;
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    .drop-empty strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted-strong);
+      font-size: 16px;
+      line-height: 1.35;
+    }
+
+    .preview-image {
+      max-width: 100%;
+      max-height: 72vh;
+      display: block;
+      border-radius: 8px;
+      box-shadow: 0 18px 52px rgba(0, 0, 0, 0.34);
+      pointer-events: none;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .detail {
+      min-height: 62px;
+      padding: 11px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.045);
+    }
+
+    .detail span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .detail strong {
+      display: block;
+      margin-top: 6px;
+      overflow: hidden;
+      color: var(--muted-strong);
+      font-size: 14px;
+      line-height: 1.3;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .editor-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      background: #080b10;
+    }
+
+    .editor-shell {
+      height: 100%;
+      min-height: 480px;
+      display: grid;
+      grid-template-columns: 56px minmax(0, 1fr);
+      background: #080b10;
+    }
+
+    .line-gutter {
+      margin: 0;
+      padding: 18px 10px 18px 0;
+      overflow: hidden;
+      color: rgba(154, 164, 178, 0.62);
+      background: #07090d;
+      border-right: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.68;
+      text-align: right;
+      user-select: none;
+      white-space: pre;
+    }
+
+    textarea {
+      width: 100%;
+      height: 100%;
+      min-height: 480px;
+      padding: 18px;
+      resize: none;
+      outline: none;
+      border: 0;
+      display: block;
+      color: #e9eef8;
+      background: #080b10;
+      caret-color: var(--success);
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.68;
+      tab-size: 2;
+      letter-spacing: 0;
+      overflow: auto;
+      white-space: pre;
+    }
+
+    textarea::placeholder {
+      color: rgba(154, 164, 178, 0.72);
+    }
+
+    .format-switch {
+      min-height: 36px;
+      padding: 3px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .switch-option {
+      min-height: 28px;
+      border-radius: 6px;
+      padding: 0 10px;
+      color: var(--muted);
+      background: transparent;
+      transition: color 160ms ease, background 160ms ease;
+    }
+
+    .switch-option:hover,
+    .switch-option:focus-visible {
+      color: var(--text);
+      outline: none;
+    }
+
+    .switch-option.active {
+      color: #050505;
+      background: #ffffff;
+      font-weight: 700;
+    }
+
+    .error-box {
+      margin: 0;
+      padding: 14px 15px;
+      border-radius: 8px;
+      border: 1px solid rgba(251, 113, 133, 0.32);
+      background: rgba(251, 113, 133, 0.1);
+      color: #fecdd3;
+      font-size: 14px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        width: min(100vw - 24px, 760px);
+        padding: 14px 0;
+      }
+
+      .topbar,
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      h1 {
+        font-size: 30px;
+      }
+
+      .subtitle {
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .actions {
+        justify-content: flex-start;
+      }
+
+      .status-strip {
+        display: flex;
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .status-text {
+        white-space: normal;
+      }
+
+      .metric {
+        width: 100%;
+      }
+
+      .pane {
+        min-height: 420px;
+      }
+
+      .drop-zone {
+        min-height: 300px;
+      }
+
+      .editor-shell,
+      textarea {
+        min-height: 360px;
+        font-size: 13px;
+      }
+
+      .line-gutter {
+        width: 48px;
+        font-size: 13px;
+      }
+
+      .editor-shell {
+        grid-template-columns: 48px minmax(0, 1fr);
+      }
+    }
+
+    @media (max-width: 560px) {
+      .actions,
+      .button {
+        width: 100%;
+      }
+
+      .pane-head {
+        height: auto;
+        min-height: 58px;
+        align-items: stretch;
+        flex-direction: column;
+        padding: 12px 14px;
+      }
+
+      .pane-tools,
+      .format-switch {
+        width: 100%;
+      }
+
+      .format-switch {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <rect width="18" height="14" x="3" y="5" rx="2"></rect>
+            <circle cx="8.5" cy="10.5" r="1.5"></circle>
+            <path d="m21 15-5-5L5 21"></path>
+          </svg>
+        </div>
+        <div>
+          <h1>图片转 Base64</h1>
+          <p class="subtitle">选择或拖入 PNG、JPEG、WebP、GIF、SVG、BMP、ICO、AVIF 图片，生成可复制的 Base64。</p>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="button" id="clearBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M3 6h18"></path>
+            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+            <path d="M10 11v6"></path>
+            <path d="M14 11v6"></path>
+          </svg>
+          清空
+        </button>
+        <button class="button primary" id="copyBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <rect width="14" height="14" x="8" y="8" rx="2"></rect>
+            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+          </svg>
+          复制结果
+        </button>
+      </div>
+    </header>
+
+    <section class="status-strip" id="statusStrip" aria-live="polite">
+      <div class="status-main">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span class="status-text" id="statusText">等待选择图片文件</span>
+      </div>
+      <div class="metric" id="typeMetric">类型：-</div>
+      <div class="metric" id="sizeMetric">大小：0 B</div>
+      <div class="metric" id="dimensionMetric">尺寸：-</div>
+      <div class="metric" id="lengthMetric">长度：0</div>
+    </section>
+
+    <section class="workspace">
+      <article class="pane">
+        <div class="pane-head">
+          <div class="pane-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <path d="M17 8 12 3 7 8"></path>
+              <path d="M12 3v12"></path>
+            </svg>
+            图片输入
+          </div>
+          <div class="pane-tools">
+            <button class="icon-button" id="selectBtn" type="button" title="选择图片" aria-label="选择图片">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path>
+                <path d="M14 2v4a2 2 0 0 0 2 2h4"></path>
+                <path d="M10 12h4"></path>
+                <path d="M12 10v4"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="drop-wrap">
+          <div class="drop-zone" id="dropZone">
+            <input class="file-input" id="fileInput" type="file" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml,image/bmp,image/x-icon,image/vnd.microsoft.icon,image/avif">
+            <div class="drop-empty" id="emptyState">
+              <strong>拖入图片或点击选择</strong>
+              支持常见图片格式，文件只在当前浏览器内读取。
+            </div>
+            <img class="preview-image hidden" id="previewImage" alt="图片预览">
+          </div>
+          <div class="error-box hidden" id="errorBox"></div>
+          <div class="detail-grid">
+            <div class="detail">
+              <span>文件名</span>
+              <strong id="detailFile">-</strong>
+            </div>
+            <div class="detail">
+              <span>MIME</span>
+              <strong id="detailMime">-</strong>
+            </div>
+            <div class="detail">
+              <span>输出格式</span>
+              <strong id="detailOutput">Data URL</strong>
+            </div>
+            <div class="detail">
+              <span>Base64 长度</span>
+              <strong id="detailLength">0</strong>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="pane">
+        <div class="pane-head">
+          <div class="pane-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M4 7h16"></path>
+              <path d="M4 12h16"></path>
+              <path d="M4 17h10"></path>
+            </svg>
+            Base64 输出
+          </div>
+          <div class="pane-tools">
+            <div class="format-switch" role="group" aria-label="输出格式">
+              <button class="switch-option active" id="dataUrlBtn" type="button">Data URL</button>
+              <button class="switch-option" id="base64Btn" type="button">纯 Base64</button>
+            </div>
+            <button class="icon-button" id="downloadTextBtn" type="button" title="下载文本" aria-label="下载文本">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M12 15V3"></path>
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <path d="m7 10 5 5 5-5"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="editor-wrap">
+          <div class="editor-shell">
+            <pre class="line-gutter" id="outputLines" aria-hidden="true">1</pre>
+            <textarea id="output" spellcheck="false" wrap="off" readonly placeholder="生成的 Base64 会显示在这里"></textarea>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const fileInput = document.querySelector("#fileInput");
+    const selectBtn = document.querySelector("#selectBtn");
+    const dropZone = document.querySelector("#dropZone");
+    const statusStrip = document.querySelector("#statusStrip");
+    const statusText = document.querySelector("#statusText");
+    const typeMetric = document.querySelector("#typeMetric");
+    const sizeMetric = document.querySelector("#sizeMetric");
+    const dimensionMetric = document.querySelector("#dimensionMetric");
+    const lengthMetric = document.querySelector("#lengthMetric");
+    const previewImage = document.querySelector("#previewImage");
+    const emptyState = document.querySelector("#emptyState");
+    const errorBox = document.querySelector("#errorBox");
+    const detailFile = document.querySelector("#detailFile");
+    const detailMime = document.querySelector("#detailMime");
+    const detailOutput = document.querySelector("#detailOutput");
+    const detailLength = document.querySelector("#detailLength");
+    const output = document.querySelector("#output");
+    const outputLines = document.querySelector("#outputLines");
+    const dataUrlBtn = document.querySelector("#dataUrlBtn");
+    const base64Btn = document.querySelector("#base64Btn");
+    const copyBtn = document.querySelector("#copyBtn");
+    const clearBtn = document.querySelector("#clearBtn");
+    const downloadTextBtn = document.querySelector("#downloadTextBtn");
+
+    const allowedImageTypes = new Set([
+      "image/png",
+      "image/jpeg",
+      "image/gif",
+      "image/webp",
+      "image/svg+xml",
+      "image/bmp",
+      "image/x-icon",
+      "image/vnd.microsoft.icon",
+      "image/avif"
+    ]);
+
+    let currentFile = null;
+    let currentDataUrl = "";
+    let currentBase64 = "";
+    let currentMime = "";
+    let outputMode = "data-url";
+
+    selectBtn.addEventListener("click", () => fileInput.click());
+
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files?.[0];
+      if (file) {
+        readImage(file);
+      }
+    });
+
+    ["dragenter", "dragover"].forEach((eventName) => {
+      dropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropZone.classList.add("dragging");
+      });
+    });
+
+    ["dragleave", "drop"].forEach((eventName) => {
+      dropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropZone.classList.remove("dragging");
+      });
+    });
+
+    dropZone.addEventListener("drop", (event) => {
+      const file = event.dataTransfer?.files?.[0];
+      if (file) {
+        readImage(file);
+      }
+    });
+
+    dataUrlBtn.addEventListener("click", () => {
+      outputMode = "data-url";
+      renderOutput();
+    });
+
+    base64Btn.addEventListener("click", () => {
+      outputMode = "base64";
+      renderOutput();
+    });
+
+    output.addEventListener("scroll", () => {
+      outputLines.scrollTop = output.scrollTop;
+    });
+
+    copyBtn.addEventListener("click", async () => {
+      if (!output.value) {
+        setStatus("invalid", "没有可复制的 Base64 结果");
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(output.value);
+        setStatus("valid", "已复制 Base64 结果");
+      } catch {
+        setStatus("invalid", "复制失败，请手动复制输出内容");
+      }
+    });
+
+    clearBtn.addEventListener("click", () => {
+      fileInput.value = "";
+      renderEmpty();
+    });
+
+    downloadTextBtn.addEventListener("click", () => {
+      if (!output.value) {
+        setStatus("invalid", "没有可下载的 Base64 结果");
+        return;
+      }
+
+      const blob = new Blob([output.value], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = buildTextFileName();
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+
+    function readImage(file) {
+      if (!isSupportedImage(file)) {
+        renderError("请选择 PNG、JPEG、WebP、GIF、SVG、BMP、ICO 或 AVIF 图片。");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = String(reader.result || "");
+        const commaIndex = dataUrl.indexOf(",");
+        if (!dataUrl.startsWith("data:") || commaIndex === -1) {
+          renderError("图片读取失败，无法生成 Data URL。");
+          return;
+        }
+
+        currentFile = file;
+        currentBase64 = dataUrl.slice(commaIndex + 1);
+        currentMime = normalizeMime(file.type) || mimeFromFileName(file.name) || normalizeMime(dataUrl.slice(5, dataUrl.indexOf(";"))) || "image/png";
+        currentDataUrl = `data:${currentMime};base64,${currentBase64}`;
+
+        previewImage.onload = () => {
+          const width = previewImage.naturalWidth || 0;
+          const height = previewImage.naturalHeight || 0;
+          dimensionMetric.textContent = width && height ? `尺寸：${width} x ${height}` : "尺寸：-";
+          setStatus("valid", "Base64 生成成功");
+        };
+        previewImage.onerror = () => {
+          dimensionMetric.textContent = "尺寸：-";
+          setStatus("valid", "Base64 生成成功，当前格式无法预览尺寸");
+        };
+        previewImage.src = currentDataUrl;
+        previewImage.classList.remove("hidden");
+        emptyState.classList.add("hidden");
+        errorBox.classList.add("hidden");
+
+        typeMetric.textContent = `类型：${currentMime || "-"}`;
+        sizeMetric.textContent = `大小：${formatBytes(file.size)}`;
+        lengthMetric.textContent = `长度：${formatNumber(currentBase64.length)}`;
+        detailFile.textContent = file.name || "-";
+        detailMime.textContent = currentMime || "-";
+        detailLength.textContent = formatNumber(currentBase64.length);
+        renderOutput();
+      };
+
+      reader.onerror = () => {
+        renderError("图片读取失败，请重新选择文件。");
+      };
+
+      reader.readAsDataURL(file);
+      setStatus("", "正在读取图片文件");
+    }
+
+    function isSupportedImage(file) {
+      if (allowedImageTypes.has(file.type)) {
+        return true;
+      }
+
+      return /\.(png|jpe?g|gif|webp|svg|bmp|ico|avif)$/i.test(file.name || "");
+    }
+
+    function normalizeMime(mime) {
+      const cleaned = (mime || "").toLowerCase();
+      const aliases = {
+        "image/jpg": "image/jpeg",
+        "image/svg": "image/svg+xml",
+        "image/x-icon": "image/x-icon",
+        "image/vnd.microsoft.icon": "image/x-icon"
+      };
+      return aliases[cleaned] || cleaned;
+    }
+
+    function mimeFromFileName(name) {
+      const match = String(name || "").toLowerCase().match(/\.([^.]+)$/);
+      const extension = match?.[1] || "";
+      const mimeByExtension = {
+        png: "image/png",
+        jpg: "image/jpeg",
+        jpeg: "image/jpeg",
+        gif: "image/gif",
+        webp: "image/webp",
+        svg: "image/svg+xml",
+        bmp: "image/bmp",
+        ico: "image/x-icon",
+        avif: "image/avif"
+      };
+      return mimeByExtension[extension] || "";
+    }
+
+    function renderOutput() {
+      dataUrlBtn.classList.toggle("active", outputMode === "data-url");
+      base64Btn.classList.toggle("active", outputMode === "base64");
+      detailOutput.textContent = outputMode === "data-url" ? "Data URL" : "纯 Base64";
+      output.value = outputMode === "data-url" ? currentDataUrl : currentBase64;
+      updateOutputLineNumbers();
+
+      if (currentDataUrl) {
+        setStatus("valid", outputMode === "data-url" ? "已生成 Data URL" : "已生成纯 Base64");
+      }
+    }
+
+    function renderError(message) {
+      currentFile = null;
+      currentDataUrl = "";
+      currentBase64 = "";
+      currentMime = "";
+      previewImage.removeAttribute("src");
+      previewImage.classList.add("hidden");
+      emptyState.classList.add("hidden");
+      errorBox.textContent = message;
+      errorBox.classList.remove("hidden");
+      output.value = "";
+      updateOutputLineNumbers();
+      setStatus("invalid", "图片转换失败");
+      typeMetric.textContent = "类型：-";
+      sizeMetric.textContent = "大小：0 B";
+      dimensionMetric.textContent = "尺寸：-";
+      lengthMetric.textContent = "长度：0";
+      detailFile.textContent = "-";
+      detailMime.textContent = "-";
+      detailLength.textContent = "0";
+    }
+
+    function renderEmpty() {
+      currentFile = null;
+      currentDataUrl = "";
+      currentBase64 = "";
+      currentMime = "";
+      previewImage.removeAttribute("src");
+      previewImage.classList.add("hidden");
+      emptyState.classList.remove("hidden");
+      errorBox.classList.add("hidden");
+      output.value = "";
+      updateOutputLineNumbers();
+      setStatus("", "等待选择图片文件");
+      typeMetric.textContent = "类型：-";
+      sizeMetric.textContent = "大小：0 B";
+      dimensionMetric.textContent = "尺寸：-";
+      lengthMetric.textContent = "长度：0";
+      detailFile.textContent = "-";
+      detailMime.textContent = "-";
+      detailOutput.textContent = outputMode === "data-url" ? "Data URL" : "纯 Base64";
+      detailLength.textContent = "0";
+    }
+
+    function updateOutputLineNumbers() {
+      const lines = Math.max(1, countLines(output.value));
+      outputLines.textContent = Array.from({ length: lines }, (_, index) => index + 1).join("\n");
+      outputLines.scrollTop = output.scrollTop;
+    }
+
+    function setStatus(state, message) {
+      statusStrip.classList.remove("valid", "invalid");
+      if (state) {
+        statusStrip.classList.add(state);
+      }
+      statusText.textContent = message;
+    }
+
+    function countLines(text) {
+      return text ? text.split(/\r\n|\r|\n/).length : 0;
+    }
+
+    function formatBytes(bytes) {
+      if (bytes < 1024) {
+        return `${bytes} B`;
+      }
+
+      if (bytes < 1024 * 1024) {
+        return `${(bytes / 1024).toFixed(1)} KB`;
+      }
+
+      return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+    }
+
+    function formatNumber(value) {
+      return new Intl.NumberFormat("zh-CN").format(value);
+    }
+
+    function buildTextFileName() {
+      const baseName = currentFile?.name ? currentFile.name.replace(/\.[^.]+$/, "") : "image-base64";
+      const suffix = outputMode === "data-url" ? "data-url" : "base64";
+      return `${baseName}.${suffix}.txt`;
+    }
+
+    renderEmpty();
+  </script>
+</body>
+</html>

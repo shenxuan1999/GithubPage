@@ -552,6 +552,7 @@
 
     .folder-window {
       overflow: hidden;
+      transition: height 240ms ease;
     }
 
     .folder-list {
@@ -1259,7 +1260,7 @@
                   </span>
                 </a>
 
-                <a class="tool-card is-live" data-folder-card href="Json/ToCsharp.html">
+                <a class="tool-card is-live" data-folder-card href="Json/toCsharp.html">
                   <span>
                     <span class="card-icon" aria-hidden="true">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
@@ -1842,6 +1843,7 @@
       };
 
       const initializeLibrary = (groups) => {
+        const windowElement = library.querySelector("[data-library-window]");
         const previousButton = library.querySelector("[data-library-prev]");
         const nextButton = library.querySelector("[data-library-next]");
         const pageDots = library.querySelector("[data-library-pages]");
@@ -1863,8 +1865,16 @@
         track.replaceChildren(...groupPages);
         track.classList.add("is-sliding");
 
+        const syncWindowHeight = () => {
+          const activePage = groupPages[currentPage];
+          if (windowElement && activePage) {
+            windowElement.style.height = `${activePage.scrollHeight}px`;
+          }
+        };
+
         const render = () => {
           track.style.transform = `translate3d(-${currentPage * 100}%, 0, 0)`;
+          syncWindowHeight();
           previousButton.disabled = pageCount <= 1;
           nextButton.disabled = pageCount <= 1;
           pageDots.replaceChildren();
@@ -1900,6 +1910,7 @@
 
         previousButton.addEventListener("click", () => move(-1));
         nextButton.addEventListener("click", () => move(1));
+        window.addEventListener("resize", syncWindowHeight);
         render();
       };
 
