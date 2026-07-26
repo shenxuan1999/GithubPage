@@ -1062,7 +1062,228 @@
         min-height: 178px;
       }
     }
+    .theme-toggle {
+      cursor: pointer;
+    }
+
+    .theme-toggle .theme-icon {
+      width: 17px;
+      height: 17px;
+      display: none;
+    }
+
+    html[data-theme="dark"] .theme-icon-sun,
+    html[data-theme="light"] .theme-icon-moon {
+      display: block;
+    }
+
+    .nav .theme-toggle {
+      min-height: 34px;
+      padding: 0 11px;
+      font-size: 13px;
+    }
   </style>
+  <style id="lightThemeStyles">
+    /* Light theme inversion */
+    :root {
+      color-scheme: light;
+      --bg: #f1f4f7;
+      --bg-soft: #e9eef4;
+      --panel: #ffffff;
+      --panel-soft: #f8fafc;
+      --text: #111317;
+      --muted: #64748b;
+      --muted-strong: #334155;
+      --line: rgba(15, 23, 42, 0.12);
+      --line-strong: rgba(15, 23, 42, 0.22);
+      --blue: #2563eb;
+      --cyan: #0f766e;
+      --shadow: 0 22px 58px rgba(15, 23, 42, 0.14);
+    }
+
+    body {
+      color: var(--text);
+      background:
+        linear-gradient(180deg, rgba(15, 23, 42, 0.035), transparent 260px),
+        linear-gradient(90deg, rgba(15, 23, 42, 0.065) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(15, 23, 42, 0.065) 1px, transparent 1px),
+        var(--bg);
+      background-size: auto, 80px 80px, 80px 80px, auto;
+    }
+
+    body::before {
+      background:
+        linear-gradient(120deg, rgba(37, 99, 235, 0.07), transparent 30%, transparent 72%, rgba(15, 118, 110, 0.055)),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(226, 232, 240, 0.7) 78%);
+    }
+
+    ::selection {
+      color: #0f172a;
+      background: rgba(37, 99, 235, 0.2);
+    }
+
+    .nav {
+      background: rgba(241, 244, 247, 0.94);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+
+    .brand-mark {
+      color: #111317;
+      border-color: rgba(15, 23, 42, 0.18);
+      background:
+        linear-gradient(180deg, #ffffff, #eef2f6),
+        #f8fafc;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.92),
+        0 6px 18px rgba(15, 23, 42, 0.1);
+    }
+
+    .nav-link:hover,
+    .nav-link:focus-visible {
+      color: #111317;
+      background: #e2e8f0;
+    }
+
+    .nav-cta,
+    .button.primary {
+      color: #ffffff;
+      background: #111317;
+      border-color: #111317;
+    }
+
+    .nav-cta:hover,
+    .nav-cta:focus-visible,
+    .button.primary:hover,
+    .button.primary:focus-visible {
+      color: #ffffff;
+      background: #272a30;
+      border-color: #272a30;
+    }
+
+    .eyebrow,
+    .meta-item,
+    .status-card,
+    .workflow-card {
+      background: #ffffff;
+      border-color: rgba(15, 23, 42, 0.12);
+    }
+
+    .button {
+      color: #111317;
+      background: rgba(255, 255, 255, 0.84);
+      border-color: rgba(15, 23, 42, 0.18);
+    }
+
+    .button:hover,
+    .button:focus-visible {
+      color: #111317;
+      background: #e9eef4;
+      border-color: rgba(15, 23, 42, 0.3);
+    }
+
+    .button.primary,
+    .button.primary:hover,
+    .button.primary:focus-visible {
+      color: #ffffff;
+    }
+
+    .product-frame {
+      border-color: rgba(15, 23, 42, 0.18);
+      background: #ffffff;
+      box-shadow: var(--shadow);
+    }
+
+    .frame-top {
+      color: #64748b;
+      background: #eef2f6;
+      border-bottom-color: rgba(15, 23, 42, 0.12);
+    }
+
+    .dots span {
+      background: #cbd5e1;
+    }
+
+    .frame-body {
+      background: #f8fafc;
+    }
+
+    .status-card {
+      background: #ffffff;
+    }
+
+    .library-arrow,
+    .folder-arrow {
+      color: #475569;
+      background: #ffffff;
+      border-color: rgba(15, 23, 42, 0.14);
+    }
+
+    .library-arrow:hover:not(:disabled),
+    .library-arrow:focus-visible:not(:disabled),
+    .folder-arrow:hover:not(:disabled),
+    .folder-arrow:focus-visible:not(:disabled) {
+      color: #0f172a;
+      background: #e2e8f0;
+      border-color: rgba(15, 23, 42, 0.28);
+    }
+
+    .folder-group {
+      background: rgba(248, 250, 252, 0.9);
+      border-color: rgba(15, 23, 42, 0.12);
+    }
+
+    .folder-label {
+      color: #0f766e;
+      background: rgba(15, 118, 110, 0.08);
+      border-color: rgba(15, 118, 110, 0.2);
+    }
+
+    .tool-card {
+      border-color: rgba(15, 23, 42, 0.14);
+      background: linear-gradient(180deg, #ffffff, #f8fafc);
+      box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+    }
+
+    .tool-card::after {
+      background: linear-gradient(90deg, transparent, rgba(15, 23, 42, 0.22), transparent);
+    }
+
+    a.tool-card:hover,
+    a.tool-card:focus-visible {
+      border-color: rgba(15, 23, 42, 0.3);
+      background: linear-gradient(180deg, #ffffff, #eef2f6);
+    }
+
+    .tool-card.is-live {
+      background:
+        linear-gradient(145deg, rgba(37, 99, 235, 0.08), transparent 48%),
+        linear-gradient(180deg, #ffffff, #f8fafc);
+    }
+
+    .empty-card {
+      background: rgba(248, 250, 252, 0.72);
+    }
+
+    .card-icon {
+      color: #111317;
+      background: #ffffff;
+      border-color: rgba(15, 23, 42, 0.18);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+
+    .tag {
+      color: #526174;
+      background: #eef2f6;
+      border-color: rgba(15, 23, 42, 0.12);
+    }
+
+    .page-dot {
+      background: #94a3b8;
+    }
+
+  </style>
+  <script src="theme.js"></script>
 </head>
 
 <body>
@@ -1080,6 +1301,25 @@
     </a>
 
     <nav class="nav-links" aria-label="页面导航">
+      <button class="button theme-toggle" id="themeToggle" type="button">
+        <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2"></path>
+          <path d="M12 20v2"></path>
+          <path d="m4.93 4.93 1.42 1.42"></path>
+          <path d="m17.66 17.66 1.41 1.41"></path>
+          <path d="M2 12h2"></path>
+          <path d="M20 12h2"></path>
+          <path d="m6.34 17.66-1.41 1.41"></path>
+          <path d="m19.07 4.93-1.41 1.42"></path>
+        </svg>
+        <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"></path>
+        </svg>
+        <span id="themeToggleText">主题</span>
+      </button>
       <a class="nav-link" href="#tools">Tools</a>
       <a class="nav-link" href="#workflow">Structure</a>
       <a class="nav-cta" href="Json/index.html">
