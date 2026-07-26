@@ -4,7 +4,28 @@ const { execSync } = require("node:child_process");
 
 const root = __dirname;
 const outputFile = path.join(root, "tools.json");
+const configFile = path.join(root, "tools.config.json");
 const excludedFolders = new Set([".git", ".github", "node_modules", "visitor"]);
+
+const config = fs.existsSync(configFile)
+  ? JSON.parse(fs.readFileSync(configFile, "utf8"))
+  : {};
+const groupOrder = Array.isArray(config.groupOrder) ? config.groupOrder : [];
+const groupOrderIndex = new Map(
+  groupOrder.map((folderName, index) => [String(folderName).toLowerCase(), index])
+);
+const toolOrder = config.toolOrder && typeof config.toolOrder === "object"
+  ? config.toolOrder
+  : {};
+const toolOrderIndexes = new Map(
+  Object.entries(toolOrder).map(([folderName, fileNames]) => [
+    folderName.toLowerCase(),
+    new Map(
+      (Array.isArray(fileNames) ? fileNames : [])
+        .map((fileName, index) => [String(fileName).toLowerCase(), index])
+    )
+  ])
+);
 
 const decodeEntities = (value) => {
   return value
@@ -84,18 +105,35 @@ const trackedFolderNames = getTrackedFolderNames();
 const folders = fs.readdirSync(root, { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
   .filter((entry) => !entry.name.startsWith(".") && !excludedFolders.has(entry.name.toLowerCase()))
-  .sort((first, second) => first.name.localeCompare(second.name, "zh-Hans-CN", {
-    numeric: true,
-    sensitivity: "base"
-  }));
+  .sort((first, second) => {
+    const firstOrder = groupOrderIndex.get(first.name.toLowerCase()) ?? Number.MAX_SAFE_INTEGER;
+    const secondOrder = groupOrderIndex.get(second.name.toLowerCase()) ?? Number.MAX_SAFE_INTEGER;
+
+    if (firstOrder !== secondOrder) {
+      return firstOrder - secondOrder;
+    }
+
+    return first.name.localeCompare(second.name, "zh-Hans-CN", {
+      numeric: true,
+      sensitivity: "base"
+    });
+  });
 
 const groups = folders.map((folder) => {
   const folderPath = path.join(root, folder.name);
   const hrefFolderName = trackedFolderNames.get(folder.name.toLowerCase()) || folder.name;
+  const configuredToolOrder = toolOrderIndexes.get(folder.name.toLowerCase()) || new Map();
   const htmlFiles = fs.readdirSync(folderPath, { withFileTypes: true })
     .filter((entry) => entry.isFile() && /\.html$/i.test(entry.name))
     .map((entry) => entry.name)
     .sort((first, second) => {
+      const firstOrder = configuredToolOrder.get(first.toLowerCase()) ?? Number.MAX_SAFE_INTEGER;
+      const secondOrder = configuredToolOrder.get(second.toLowerCase()) ?? Number.MAX_SAFE_INTEGER;
+
+      if (firstOrder !== secondOrder) {
+        return firstOrder - secondOrder;
+      }
+
       if (first.toLowerCase() === "index.html") {
         return -1;
       }

@@ -1,0 +1,26 @@
+{
+  "groupOrder": [
+    "Json",
+    "Jwt",
+    "Cron",
+    "Base64",
+    "Test2"
+  ],
+  "toolOrder": {
+    "Json": [
+      "index.html",
+      "toCsharp.html"
+    ],
+    "Jwt": [
+      "index.html"
+    ],
+    "Cron": [
+      "index.html"
+    ],
+    "Base64": [
+      "index.html",
+      "toBase64.html"
+    ],
+    "Test2": []
+  }
+}
