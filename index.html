@@ -899,18 +899,48 @@
     }
 
     .workflow {
-      margin-top: 16px;
+      margin-top: 10px;
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 16px;
     }
 
+    .workflow-section {
+      padding: 72px 0 76px;
+      scroll-margin-top: 84px;
+    }
+
+    .workflow-section .section-copy,
+    .workflow-section .workflow-card p {
+      color: var(--muted-strong);
+    }
+
     .workflow-card {
-      min-height: 178px;
-      padding: 18px;
+      min-height: 148px;
+      padding: 20px;
       border: 1px solid var(--line);
       border-radius: 8px;
       background: rgba(255, 255, 255, 0.045);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    a.workflow-card {
+      transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+    }
+
+    a.workflow-card:hover,
+    a.workflow-card:focus-visible {
+      border-color: rgba(45, 212, 191, 0.58);
+      background: rgba(45, 212, 191, 0.07);
+      box-shadow: 0 16px 34px rgba(0, 0, 0, 0.18);
+      transform: translateY(-2px);
+    }
+
+    a.workflow-card:focus-visible {
+      outline: 2px solid rgba(45, 212, 191, 0.72);
+      outline-offset: 3px;
     }
 
     .workflow-card span {
@@ -931,6 +961,14 @@
       color: var(--muted);
       font-size: 14px;
       line-height: 1.65;
+    }
+
+    .workflow-card-cta {
+      margin-top: auto;
+      padding-top: 16px;
+      color: var(--cyan);
+      font-size: 13px;
+      font-weight: 800;
     }
 
     .footer {
@@ -981,6 +1019,8 @@
         align-items: flex-start;
         flex-direction: column;
         padding-top: 14px;
+        position: relative;
+        top: auto;
       }
 
       .nav-links {
@@ -1032,6 +1072,10 @@
         padding: 62px 0;
       }
 
+      .workflow-section {
+        padding: 52px 0 56px;
+      }
+
       .section-head {
         align-items: flex-start;
         flex-direction: column;
@@ -1060,6 +1104,10 @@
 
       .tool-card {
         min-height: 178px;
+      }
+
+      .workflow-card {
+        min-height: 142px;
       }
     }
     .theme-toggle {
@@ -1167,6 +1215,13 @@
     .workflow-card {
       background: #ffffff;
       border-color: rgba(15, 23, 42, 0.12);
+    }
+
+    a.workflow-card:hover,
+    a.workflow-card:focus-visible {
+      border-color: rgba(15, 118, 110, 0.42);
+      background: #f8fffd;
+      box-shadow: 0 16px 34px rgba(15, 23, 42, 0.1);
     }
 
     .button {
@@ -1321,7 +1376,7 @@
         <span id="themeToggleText">主题</span>
       </button>
       <a class="nav-link" href="#tools">Tools</a>
-      <a class="nav-link" href="#workflow">Structure</a>
+      <a class="nav-link" href="#workflow">Why</a>
       <a class="nav-cta" href="Json/index.html">
         JSON Parser
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
@@ -1761,38 +1816,40 @@
       </div>
     </section>
 
-    <section id="workflow" class="section" aria-labelledby="workflow-title">
+    <section id="workflow" class="section workflow-section" aria-labelledby="workflow-title">
       <div class="section-head">
         <div>
-          <p class="section-kicker">Structure</p>
-          <h2 id="workflow-title" class="section-title">文件夹分组，工具页独立。</h2>
+          <p class="section-kicker">Why GithubPage</p>
+          <h2 id="workflow-title" class="section-title">常用工具，打开就能用。</h2>
         </div>
-        <p class="section-copy">首页只承担分组发现和跳转，每个具体工具继续留在自己的文件夹页面里。</p>
+        <p class="section-copy">清晰整理常用开发工具，方便发现、收藏和再次使用。</p>
       </div>
 
       <div class="workflow">
         <div class="workflow-card">
           <span>01</span>
-          <h3>文件夹分组</h3>
-          <p>根目录首页按文件夹拆成分组，每屏最多展示四行。</p>
+          <h3>快速发现</h3>
+          <p>按用途整理常用工具，减少反复搜索。</p>
         </div>
         <div class="workflow-card">
           <span>02</span>
-          <h3>双层分页</h3>
-          <p>外层按四个分组滑动，组内按 3 张卡片切换。</p>
+          <h3>收藏直达</h3>
+          <p>每个工具都有独立地址，随时直接打开。</p>
         </div>
-        <div class="workflow-card">
+        <a class="workflow-card" href="mailto:shenxuan1999@gmail.com?subject=GithubPage%20Tool%20Suggestion"
+          aria-label="发送 GithubPage 工具建议邮件">
           <span>03</span>
-          <h3>独立维护</h3>
-          <p>每个工具保留自己的目录和页面结构，新增入口时只补卡片。</p>
-        </div>
+          <h3>还缺什么？</h3>
+          <p>没找到需要的工具？欢迎告诉我。</p>
+          <span class="workflow-card-cta">发送工具建议</span>
+        </a>
       </div>
     </section>
   </main>
 
   <footer class="site footer">
     <span>GithubPage 工具首页</span>
-    <span>Copyright © 2026 shenxuan1999 · shenxuan1999@gmail.com</span>
+    <span>Copyright © 2026 shenxuan · shenxuan1999@gmail.com</span>
   </footer>
 
   <script>
