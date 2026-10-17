@@ -313,6 +313,40 @@
       height: 18px;
     }
 
+    .tool-toggle {
+      height: 32px;
+      padding: 0 10px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      white-space: nowrap;
+      transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+    }
+
+    .tool-toggle:hover,
+    .tool-toggle:focus-visible {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--border-strong);
+      color: var(--text);
+      outline: none;
+    }
+
+    .tool-toggle.active {
+      color: #050505;
+      background: var(--success);
+      border-color: var(--success);
+    }
+
+    .tool-toggle svg {
+      width: 16px;
+      height: 16px;
+    }
+
     .editor-wrap {
       position: relative;
       flex: 1;
@@ -697,6 +731,25 @@
       border-color: rgba(15, 23, 42, 0.18);
     }
 
+    .tool-toggle {
+      color: #475569;
+      background: rgba(255, 255, 255, 0.84);
+      border-color: rgba(15, 23, 42, 0.18);
+    }
+
+    .tool-toggle:hover,
+    .tool-toggle:focus-visible {
+      color: #0f172a;
+      background: #e2e8f0;
+      border-color: rgba(15, 23, 42, 0.3);
+    }
+
+    .tool-toggle.active {
+      color: #ffffff;
+      background: #0f766e;
+      border-color: #0f766e;
+    }
+
     .editor-wrap,
     .editor-shell,
     .drop-wrap,
@@ -800,7 +853,7 @@
         </div>
       </div>
       <div class="actions">
-+        <button class="button theme-toggle" id="themeToggle" type="button">
+        <button class="button theme-toggle" id="themeToggle" type="button">
           <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="4"></circle>
@@ -899,6 +952,16 @@
             解析结果
           </div>
           <div class="pane-tools">
+            <button class="tool-toggle" id="sourceBtn" type="button" aria-pressed="false"
+              title="切换为可编辑、可直接选中复制的源码视图">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path>
+                <path d="M14 2v6h6"></path>
+                <path d="m10 13-2 2 2 2"></path>
+                <path d="m14 17 2-2-2-2"></path>
+              </svg>
+              源码
+            </button>
             <button class="icon-button" id="downloadBtn" type="button" title="下载 JSON">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path d="M12 15V3"></path>
@@ -910,6 +973,10 @@
         </div>
         <div class="editor-wrap" id="resultWrap">
           <div class="output placeholder" id="output">解析后的 JSON 会显示在这里。</div>
+          <div class="editor-shell hidden" id="sourceView">
+            <pre class="line-gutter" id="sourceLines" aria-hidden="true">1</pre>
+            <textarea id="source" spellcheck="false" wrap="off" aria-label="格式化后的 JSON 源码，可编辑"></textarea>
+          </div>
           <div class="error-box hidden" id="errorBox"></div>
         </div>
       </article>
@@ -931,6 +998,10 @@
     const pasteBtn = document.querySelector("#pasteBtn");
     const copyBtn = document.querySelector("#copyBtn");
     const downloadBtn = document.querySelector("#downloadBtn");
+    const sourceBtn = document.querySelector("#sourceBtn");
+    const sourceView = document.querySelector("#sourceView");
+    const sourceLines = document.querySelector("#sourceLines");
+    const source = document.querySelector("#source");
 
     const sample = String.raw`{
   "catalog": [
@@ -990,7 +1061,10 @@
     let formattedResult = "";
     let currentJsonValue = null;
     let collapsedPaths = new Set();
+    let sourceMode = false;
+    let sourceBase = "";
     let parseTimer = 0;
+    let sourceTimer = 0;
 
     input.addEventListener("input", () => {
       updateInputLineNumbers();
@@ -1050,8 +1124,8 @@
       }
 
       try {
-        await navigator.clipboard.writeText(formattedResult);
-        setStatus("valid", "已复制格式化后的 JSON");
+        await navigator.clipboard.writeText(getResultText());
+        setStatus("valid", isSourceEdited() ? "已复制修改后的源码" : "已复制格式化后的 JSON");
       } catch {
         setStatus("invalid", "复制失败，请手动选择结果复制");
       }
@@ -1063,13 +1137,37 @@
         return;
       }
 
-      const blob = new Blob([formattedResult], { type: "application/json;charset=utf-8" });
+      const blob = new Blob([getResultText()], { type: "application/json;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
       link.download = "formatted.json";
       link.click();
       URL.revokeObjectURL(url);
+    });
+
+    sourceBtn.addEventListener("click", () => {
+      sourceMode = !sourceMode;
+      updateResultView();
+    });
+
+    source.addEventListener("scroll", () => {
+      sourceLines.scrollTop = source.scrollTop;
+    });
+
+    source.addEventListener("input", () => {
+      updateSourceLineNumbers();
+      window.clearTimeout(sourceTimer);
+      sourceTimer = window.setTimeout(checkSource, 120);
+    });
+
+    source.addEventListener("keydown", (event) => {
+      if (event.key === "Tab") {
+        event.preventDefault();
+        source.setRangeText("  ", source.selectionStart, source.selectionEnd, "end");
+        updateSourceLineNumbers();
+        checkSource();
+      }
     });
 
     output.addEventListener("click", (event) => {
@@ -1102,6 +1200,7 @@
         currentJsonValue = null;
         collapsedPaths.clear();
         output.classList.add("hidden");
+        updateResultView();
         errorBox.classList.remove("hidden");
         errorBox.textContent = result.message;
         setStatus("invalid", "JSON 校验失败");
@@ -1115,6 +1214,7 @@
       currentJsonValue = result.value;
       collapsedPaths.clear();
       drawJsonTree(result.value);
+      updateResultView();
       errorBox.classList.add("hidden");
       setStatus("valid", result.unescaped ? "JSON 合法，已格式化并去除外层转义" : "JSON 合法，已格式化");
       typeMetric.textContent = `类型：${getJsonType(result.value)}`;
@@ -1392,11 +1492,66 @@
       output.textContent = "解析后的 JSON 会显示在这里。";
       output.classList.add("placeholder");
       output.classList.remove("hidden");
+      updateResultView();
       errorBox.classList.add("hidden");
       setStatus("", "等待输入 JSON");
       typeMetric.textContent = "类型：-";
       sizeMetric.textContent = "大小：0 B";
       lineMetric.textContent = "行数：0";
+    }
+
+    // Source view shows the formatted JSON as editable text so any part can be changed, selected and copied.
+    function updateResultView() {
+      const showSource = sourceMode && formattedResult !== "";
+      sourceBtn.classList.toggle("active", sourceMode);
+      sourceBtn.setAttribute("aria-pressed", String(sourceMode));
+      sourceView.classList.toggle("hidden", !showSource);
+
+      if (!formattedResult) {
+        sourceBase = "";
+        return;
+      }
+
+      output.classList.toggle("hidden", showSource);
+      // Refill only when the parsed result changes, so edits survive switching views.
+      if (showSource && sourceBase !== formattedResult) {
+        sourceBase = formattedResult;
+        source.value = formattedResult;
+        source.scrollTop = 0;
+        updateSourceLineNumbers();
+      }
+    }
+
+    function getResultText() {
+      return sourceMode && formattedResult ? source.value : formattedResult;
+    }
+
+    function isSourceEdited() {
+      return sourceMode && formattedResult !== "" && source.value !== formattedResult;
+    }
+
+    function checkSource() {
+      if (!isSourceEdited()) {
+        setStatus("valid", "JSON 合法，已格式化");
+        return;
+      }
+
+      try {
+        JSON.parse(source.value);
+        setStatus("valid", "源码已修改，JSON 合法");
+      } catch (error) {
+        const position = extractErrorPosition(error.message);
+        const location = position === null ? null : getLineColumn(source.value, position);
+        setStatus("invalid", location
+          ? `源码已修改，但 JSON 不合法：第 ${location.line} 行，第 ${location.column} 列`
+          : "源码已修改，但 JSON 不合法");
+      }
+    }
+
+    function updateSourceLineNumbers() {
+      const lines = Math.max(1, countLines(source.value));
+      sourceLines.textContent = Array.from({ length: lines }, (_, index) => index + 1).join("\n");
+      sourceLines.scrollTop = source.scrollTop;
     }
 
     function updateInputLineNumbers() {
