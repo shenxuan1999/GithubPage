@@ -5,169 +5,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Cron 表达式生成器</title>
+  <link rel="stylesheet" href="../tool-base.css">
   <style>
-    :root {
-      color-scheme: dark;
-      --bg: #050505;
-      --panel: #111317;
-      --text: #f5f7fb;
-      --muted: #9aa4b2;
-      --muted-strong: #c9d1dc;
-      --border: rgba(255, 255, 255, 0.12);
-      --border-strong: rgba(255, 255, 255, 0.24);
-      --success: #2dd4bf;
-      --danger: #fb7185;
-      --warning: #f59e0b;
-      --shadow: 0 28px 80px rgba(0, 0, 0, 0.44);
-      --mono: Consolas, "SFMono-Regular", "Liberation Mono", Menlo, monospace;
-      --sans: Inter, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 260px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-        var(--bg);
-      background-size: auto, 80px 80px, 80px 80px, auto;
-      color: var(--text);
-      font-family: var(--sans);
-    }
-
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background:
-        linear-gradient(120deg, rgba(47, 125, 246, 0.16), transparent 30%, transparent 72%, rgba(45, 212, 191, 0.12)),
-        linear-gradient(180deg, transparent, rgba(5, 5, 5, 0.86) 78%);
-      z-index: -1;
-    }
-
     button,
     input,
     select {
       font: inherit;
-    }
-
-    button {
-      border: 0;
-      cursor: pointer;
-    }
-
-    .app {
-      width: min(1480px, calc(100vw - 40px));
-      min-height: 100vh;
-      margin: 0 auto;
-      padding: 22px 0 26px;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 18px;
-      padding: 0 2px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      min-width: 0;
-    }
-
-    .mark {
-      width: 44px;
-      height: 44px;
-      border: 1px solid var(--border-strong);
-      border-radius: 8px;
-      display: grid;
-      place-items: center;
-      background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04)),
-        #090a0c;
-      color: #ffffff;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
-      flex: 0 0 auto;
-    }
-
-    .mark svg {
-      width: 25px;
-      height: 25px;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: 36px;
-      line-height: 1.1;
-      letter-spacing: 0;
-    }
-
-    .subtitle {
-      margin: 5px 0 0;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    .actions {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .button {
-      min-height: 38px;
-      border-radius: 8px;
-      padding: 0 13px;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--text);
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid var(--border);
-      transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
-      white-space: nowrap;
-    }
-
-    .button:hover,
-    .button:focus-visible {
-      border-color: var(--border-strong);
-      background: rgba(255, 255, 255, 0.1);
-      transform: translateY(-1px);
-      outline: none;
-    }
-
-    .button.primary {
-      color: #050505;
-      background: #ffffff;
-      border-color: #ffffff;
-      font-weight: 700;
-    }
-
-    .button.primary:hover,
-    .button.primary:focus-visible {
-      background: #eef3ff;
-      border-color: #eef3ff;
-    }
-
-    .button svg {
-      width: 17px;
-      height: 17px;
-      stroke-width: 2.2;
-      flex: 0 0 auto;
     }
 
     .status-strip {
@@ -185,51 +28,6 @@
       backdrop-filter: blur(18px);
     }
 
-    .status-main {
-      min-width: 0;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    .status-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--warning);
-      box-shadow: 0 0 0 4px rgba(184, 107, 0, 0.12);
-      flex: 0 0 auto;
-    }
-
-    .status-strip.valid .status-dot {
-      background: var(--success);
-      box-shadow: 0 0 0 4px rgba(45, 212, 191, 0.14), 0 0 18px rgba(45, 212, 191, 0.58);
-    }
-
-    .status-strip.invalid .status-dot {
-      background: var(--danger);
-      box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.14), 0 0 18px rgba(251, 113, 133, 0.34);
-    }
-
-    .status-text {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .metric {
-      min-height: 30px;
-      padding: 5px 10px;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.055);
-      border: 1px solid var(--border);
-      color: var(--muted);
-      font-size: 13px;
-      white-space: nowrap;
-    }
-
     .workspace {
       flex: 1;
       min-height: 0;
@@ -240,42 +38,6 @@
 
     .pane {
       min-height: 560px;
-      display: flex;
-      flex-direction: column;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035)),
-        var(--panel);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-
-    .pane-head {
-      height: 58px;
-      padding: 0 14px 0 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      border-bottom: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.045);
-    }
-
-    .pane-title {
-      min-width: 0;
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      font-weight: 700;
-      color: var(--muted-strong);
-    }
-
-    .pane-title svg {
-      width: 18px;
-      height: 18px;
-      color: var(--success);
-      flex: 0 0 auto;
     }
 
     .pane-body {
@@ -622,237 +384,10 @@
         min-height: 420px;
       }
     }
-    .theme-toggle {
-      cursor: pointer;
-    }
-
-    .theme-toggle .theme-icon {
-      width: 17px;
-      height: 17px;
-      display: none;
-    }
-
-    html[data-theme="dark"] .theme-icon-sun,
-    html[data-theme="light"] .theme-icon-moon {
-      display: block;
-    }
   </style>
+  <link rel="stylesheet" href="../tool-light.css" data-light-theme>
   <style id="lightThemeStyles">
     /* Light theme inversion */
-    :root {
-      color-scheme: light;
-      --bg: #f1f4f7;
-      --panel: #ffffff;
-      --panel-soft: #f8fafc;
-      --text: #111317;
-      --muted: #64748b;
-      --muted-strong: #334155;
-      --border: rgba(15, 23, 42, 0.12);
-      --border-strong: rgba(15, 23, 42, 0.24);
-      --primary: #2563eb;
-      --success: #0f8f83;
-      --danger: #e11d48;
-      --warning: #d97706;
-      --shadow: 0 18px 46px rgba(15, 23, 42, 0.12);
-    }
-
-    body {
-      background:
-        linear-gradient(180deg, rgba(15, 23, 42, 0.035), transparent 260px),
-        linear-gradient(90deg, rgba(15, 23, 42, 0.065) 1px, transparent 1px),
-        linear-gradient(180deg, rgba(15, 23, 42, 0.065) 1px, transparent 1px),
-        var(--bg);
-      background-size: auto, 80px 80px, 80px 80px, auto;
-      color: var(--text);
-    }
-
-    body::before {
-      background:
-        linear-gradient(120deg, rgba(37, 99, 235, 0.07), transparent 30%, transparent 72%, rgba(15, 143, 131, 0.055)),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(226, 232, 240, 0.7) 78%);
-    }
-
-    ::selection {
-      color: #0f172a;
-      background: rgba(37, 99, 235, 0.2);
-    }
-
-    .mark {
-      border-color: rgba(15, 23, 42, 0.18);
-      color: #111317;
-      background:
-        linear-gradient(180deg, #ffffff, #eef2f6),
-        #f8fafc;
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.92),
-        0 6px 18px rgba(15, 23, 42, 0.1);
-    }
-
-    .button {
-      color: #111317;
-      background: rgba(255, 255, 255, 0.84);
-      border-color: rgba(15, 23, 42, 0.18);
-    }
-
-    .button:hover,
-    .button:focus-visible {
-      color: #111317;
-      background: #e9eef4;
-      border-color: rgba(15, 23, 42, 0.3);
-    }
-
-    .button.primary {
-      color: #ffffff;
-      background: #111317;
-      border-color: #111317;
-    }
-
-    .button.primary:hover,
-    .button.primary:focus-visible {
-      color: #ffffff;
-      background: #272a30;
-      border-color: #272a30;
-    }
-
-    .status-strip {
-      border-color: rgba(15, 23, 42, 0.14);
-      background: linear-gradient(180deg, #eef3f8, #e6edf5);
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.92),
-        0 16px 40px rgba(15, 23, 42, 0.1);
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-    }
-
-    .status-main {
-      color: #475569;
-    }
-
-    .metric {
-      color: #475569;
-      background: #eef2f6;
-      border-color: rgba(15, 23, 42, 0.12);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
-    }
-
-    .pane {
-      border-color: rgba(15, 23, 42, 0.16);
-      background: #f8fafc;
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.82),
-        0 18px 46px rgba(15, 23, 42, 0.12);
-    }
-
-    .pane-head {
-      border-bottom-color: rgba(15, 23, 42, 0.14);
-      background: linear-gradient(180deg, #eef3f8, #e6edf5);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-    }
-
-    .pane-title {
-      color: #273244;
-    }
-
-    .pane-title svg {
-      color: #0f766e;
-    }
-
-    .icon-button {
-      color: #64748b;
-    }
-
-    .icon-button:hover,
-    .icon-button:focus-visible {
-      color: #0f172a;
-      background: #e2e8f0;
-      border-color: rgba(15, 23, 42, 0.18);
-    }
-
-    .editor-wrap,
-    .editor-shell,
-    .drop-wrap,
-    .preview-wrap,
-    .pane-body {
-      color-scheme: light;
-      background: #f8fafc;
-    }
-
-    textarea,
-    .output,
-    .code,
-    .signature-info {
-      color-scheme: light;
-      color: #172033;
-      background: #f8fafc;
-    }
-
-    textarea {
-      caret-color: #0f766e;
-    }
-
-    textarea::placeholder,
-    .placeholder {
-      color: #64748b;
-    }
-
-    .line-gutter,
-    .output-line-no {
-      color: #526174;
-      background: #eef2f6;
-      border-right-color: rgba(15, 23, 42, 0.12);
-    }
-
-    .json-key,
-    .cs-keyword {
-      color: #1d4ed8;
-    }
-
-    .json-string,
-    .cs-tag {
-      color: #15803d;
-    }
-
-    .json-number,
-    .cs-class-name {
-      color: #b45309;
-    }
-
-    .json-boolean {
-      color: #9333ea;
-    }
-
-    .json-null,
-    .cs-property {
-      color: #7c3aed;
-    }
-
-    .json-bracket,
-    .json-punctuation,
-    .json-count {
-      color: #334155;
-    }
-
-    .cs-type {
-      color: #0f766e;
-    }
-
-    .cs-comment {
-      color: #64748b;
-    }
-
-    .fold-toggle {
-      color: #475569;
-      background: #e2e8f0;
-    }
-
-    .error-box {
-      color: #be123c;
-      background: #fff1f2;
-      border-color: rgba(225, 29, 72, 0.26);
-    }
-
     .preset-btn,
     .tab-btn,
     .chip-btn,
@@ -907,6 +442,7 @@
 
   </style>
   <script src="../theme.js"></script>
+  <script src="../tool-common.js"></script>
 </head>
 
 <body>
@@ -926,7 +462,7 @@
         </div>
       </div>
       <div class="actions">
-+        <button class="button theme-toggle" id="themeToggle" type="button">
+        <button class="button theme-toggle" id="themeToggle" type="button">
           <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="4"></circle>
@@ -1044,8 +580,6 @@
     const applyExpressionBtn = document.querySelector("#applyExpressionBtn");
     const partsGrid = document.querySelector("#partsGrid");
     const nextRuns = document.querySelector("#nextRuns");
-    const statusStrip = document.querySelector("#statusStrip");
-    const statusText = document.querySelector("#statusText");
     const fieldMetric = document.querySelector("#fieldMetric");
     const activeMetric = document.querySelector("#activeMetric");
     const modeMetric = document.querySelector("#modeMetric");
@@ -1779,22 +1313,6 @@
         second: "2-digit",
         hour12: false
       });
-    }
-
-    function setStatus(stateName, message) {
-      statusStrip.classList.remove("valid", "invalid");
-      if (stateName) {
-        statusStrip.classList.add(stateName);
-      }
-      statusText.textContent = message;
-    }
-
-    function escapeHtml(text) {
-      return String(text)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
     }
 
     fieldTabs.addEventListener("click", (event) => {

@@ -5,172 +5,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>JSON 解析器</title>
+  <link rel="stylesheet" href="../tool-base.css">
   <style>
-    :root {
-      color-scheme: dark;
-      --bg: #050505;
-      --panel: #111317;
-      --panel-soft: #171a20;
-      --text: #f5f7fb;
-      --muted: #9aa4b2;
-      --muted-strong: #c9d1dc;
-      --border: rgba(255, 255, 255, 0.12);
-      --border-strong: rgba(255, 255, 255, 0.24);
-      --primary: #2f7df6;
-      --primary-dark: #1f5fd0;
-      --success: #2dd4bf;
-      --danger: #fb7185;
-      --warning: #f59e0b;
-      --shadow: 0 28px 80px rgba(0, 0, 0, 0.44);
-      --mono: Consolas, "SFMono-Regular", "Liberation Mono", Menlo, monospace;
-      --sans: Inter, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 260px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-        var(--bg);
-      background-size: auto, 80px 80px, 80px 80px, auto;
-      color: var(--text);
-      font-family: var(--sans);
-    }
-
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background:
-        linear-gradient(120deg, rgba(47, 125, 246, 0.16), transparent 30%, transparent 72%, rgba(45, 212, 191, 0.12)),
-        linear-gradient(180deg, transparent, rgba(5, 5, 5, 0.86) 78%);
-      z-index: -1;
-    }
-
     button,
     textarea {
       font: inherit;
     }
 
-    button {
-      border: 0;
-      cursor: pointer;
-    }
-
     .app {
-      width: min(1480px, calc(100vw - 40px));
-      min-height: 100vh;
-      margin: 0 auto;
-      padding: 22px 0 26px;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 18px;
-      padding: 0 2px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      min-width: 0;
-    }
-
-    .mark {
-      width: 44px;
-      height: 44px;
-      border: 1px solid var(--border-strong);
-      border-radius: 8px;
-      display: grid;
-      place-items: center;
-      background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04)),
-        #090a0c;
-      color: #ffffff;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
-      flex: 0 0 auto;
-    }
-
-    .mark svg {
-      width: 25px;
-      height: 25px;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: 36px;
-      line-height: 1.1;
-      letter-spacing: 0;
-    }
-
-    .subtitle {
-      margin: 5px 0 0;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    .actions {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .button {
-      min-height: 38px;
-      border-radius: 8px;
-      padding: 0 13px;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--text);
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid var(--border);
-      box-shadow: none;
-      transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
-      white-space: nowrap;
-    }
-
-    .button:hover,
-    .button:focus-visible {
-      border-color: var(--border-strong);
-      background: rgba(255, 255, 255, 0.1);
-      transform: translateY(-1px);
-      outline: none;
-    }
-
-    .button.primary {
-      color: #050505;
-      background: #ffffff;
-      border-color: #ffffff;
-      font-weight: 700;
-    }
-
-    .button.primary:hover,
-    .button.primary:focus-visible {
-      background: #eef3ff;
-      border-color: #eef3ff;
-    }
-
-    .button svg {
-      width: 17px;
-      height: 17px;
-      stroke-width: 2.2;
-      flex: 0 0 auto;
+      height: 100vh;
+      height: 100dvh;
+      min-height: auto;
     }
 
     .status-strip {
@@ -188,129 +33,13 @@
       backdrop-filter: blur(18px);
     }
 
-    .status-main {
-      min-width: 0;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    .status-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--warning);
-      box-shadow: 0 0 0 4px rgba(184, 107, 0, 0.12);
-      flex: 0 0 auto;
-    }
-
-    .status-strip.valid .status-dot {
-      background: var(--success);
-      box-shadow: 0 0 0 4px rgba(45, 212, 191, 0.14), 0 0 18px rgba(45, 212, 191, 0.58);
-    }
-
-    .status-strip.invalid .status-dot {
-      background: var(--danger);
-      box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.14), 0 0 18px rgba(251, 113, 133, 0.34);
-    }
-
-    .status-text {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .metric {
-      min-height: 30px;
-      padding: 5px 10px;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.055);
-      border: 1px solid var(--border);
-      color: var(--muted);
-      font-size: 13px;
-      white-space: nowrap;
-    }
-
     .workspace {
       flex: 1;
-      min-height: 0;
+      min-height: 540px;
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
       gap: 18px;
-    }
-
-    .pane {
-      min-height: 540px;
-      display: flex;
-      flex-direction: column;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035)),
-        var(--panel);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-
-    .pane-head {
-      height: 58px;
-      padding: 0 14px 0 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      border-bottom: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.045);
-    }
-
-    .pane-title {
-      min-width: 0;
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      font-weight: 700;
-      color: var(--muted-strong);
-    }
-
-    .pane-title svg {
-      width: 18px;
-      height: 18px;
-      color: var(--success);
-      flex: 0 0 auto;
-    }
-
-    .pane-tools {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex: 0 0 auto;
-    }
-
-    .icon-button {
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      display: grid;
-      place-items: center;
-      color: var(--muted);
-      background: transparent;
-      border: 1px solid transparent;
-      transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
-    }
-
-    .icon-button:hover,
-    .icon-button:focus-visible {
-      background: rgba(255, 255, 255, 0.08);
-      border-color: var(--border-strong);
-      color: var(--text);
-      outline: none;
-    }
-
-    .icon-button svg {
-      width: 18px;
-      height: 18px;
     }
 
     .tool-toggle {
@@ -347,34 +76,13 @@
       height: 16px;
     }
 
-    .editor-wrap {
-      position: relative;
-      flex: 1;
-      min-height: 0;
-      background: #080b10;
-    }
-
     .editor-shell {
       height: 100%;
       min-height: 480px;
       display: grid;
       grid-template-columns: 56px minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
       background: #080b10;
-    }
-
-    .line-gutter {
-      margin: 0;
-      padding: 18px 10px 18px 0;
-      overflow: hidden;
-      color: rgba(154, 164, 178, 0.62);
-      background: #07090d;
-      border-right: 1px solid var(--border);
-      font-family: var(--mono);
-      font-size: 14px;
-      line-height: 1.68;
-      text-align: right;
-      user-select: none;
-      white-space: pre;
     }
 
     textarea {
@@ -398,11 +106,8 @@
       white-space: pre;
     }
 
-    textarea::placeholder {
-      color: rgba(154, 164, 178, 0.72);
-    }
-
     .output {
+      position: relative;
       height: 100%;
       min-height: 480px;
       margin: 0;
@@ -422,11 +127,24 @@
       color: rgba(154, 164, 178, 0.72);
     }
 
+    /* Only the rows in view are rendered; the spacer keeps the full scroll size. */
+    .json-spacer {
+      position: relative;
+      min-width: 100%;
+    }
+
+    .json-rows {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+    }
+
     .json-line {
       min-width: max-content;
       display: flex;
       align-items: baseline;
-      min-height: 23.52px;
+      height: 23.52px;
     }
 
     .output-line-no {
@@ -520,6 +238,8 @@
     @media (max-width: 980px) {
       .app {
         width: min(100vw - 24px, 760px);
+        height: auto;
+        min-height: 100vh;
         padding: 14px 0;
       }
 
@@ -561,7 +281,13 @@
         width: 100%;
       }
 
+      .workspace {
+        min-height: 0;
+        grid-template-rows: none;
+      }
+
       .pane {
+        height: 75vh;
         min-height: 420px;
       }
 
@@ -583,154 +309,10 @@
         grid-template-columns: 48px minmax(0, 1fr);
       }
     }
-    .theme-toggle {
-      cursor: pointer;
-    }
-
-    .theme-toggle .theme-icon {
-      width: 17px;
-      height: 17px;
-      display: none;
-    }
-
-    html[data-theme="dark"] .theme-icon-sun,
-    html[data-theme="light"] .theme-icon-moon {
-      display: block;
-    }
   </style>
+  <link rel="stylesheet" href="../tool-light.css" data-light-theme>
   <style id="lightThemeStyles">
     /* Light theme inversion */
-    :root {
-      color-scheme: light;
-      --bg: #f1f4f7;
-      --panel: #ffffff;
-      --panel-soft: #f8fafc;
-      --text: #111317;
-      --muted: #64748b;
-      --muted-strong: #334155;
-      --border: rgba(15, 23, 42, 0.12);
-      --border-strong: rgba(15, 23, 42, 0.24);
-      --primary: #2563eb;
-      --success: #0f8f83;
-      --danger: #e11d48;
-      --warning: #d97706;
-      --shadow: 0 18px 46px rgba(15, 23, 42, 0.12);
-    }
-
-    body {
-      background:
-        linear-gradient(180deg, rgba(15, 23, 42, 0.035), transparent 260px),
-        linear-gradient(90deg, rgba(15, 23, 42, 0.065) 1px, transparent 1px),
-        linear-gradient(180deg, rgba(15, 23, 42, 0.065) 1px, transparent 1px),
-        var(--bg);
-      background-size: auto, 80px 80px, 80px 80px, auto;
-      color: var(--text);
-    }
-
-    body::before {
-      background:
-        linear-gradient(120deg, rgba(37, 99, 235, 0.07), transparent 30%, transparent 72%, rgba(15, 143, 131, 0.055)),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(226, 232, 240, 0.7) 78%);
-    }
-
-    ::selection {
-      color: #0f172a;
-      background: rgba(37, 99, 235, 0.2);
-    }
-
-    .mark {
-      border-color: rgba(15, 23, 42, 0.18);
-      color: #111317;
-      background:
-        linear-gradient(180deg, #ffffff, #eef2f6),
-        #f8fafc;
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.92),
-        0 6px 18px rgba(15, 23, 42, 0.1);
-    }
-
-    .button {
-      color: #111317;
-      background: rgba(255, 255, 255, 0.84);
-      border-color: rgba(15, 23, 42, 0.18);
-    }
-
-    .button:hover,
-    .button:focus-visible {
-      color: #111317;
-      background: #e9eef4;
-      border-color: rgba(15, 23, 42, 0.3);
-    }
-
-    .button.primary {
-      color: #ffffff;
-      background: #111317;
-      border-color: #111317;
-    }
-
-    .button.primary:hover,
-    .button.primary:focus-visible {
-      color: #ffffff;
-      background: #272a30;
-      border-color: #272a30;
-    }
-
-    .status-strip {
-      border-color: rgba(15, 23, 42, 0.14);
-      background: linear-gradient(180deg, #eef3f8, #e6edf5);
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.92),
-        0 16px 40px rgba(15, 23, 42, 0.1);
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-    }
-
-    .status-main {
-      color: #475569;
-    }
-
-    .metric {
-      color: #475569;
-      background: #eef2f6;
-      border-color: rgba(15, 23, 42, 0.12);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
-    }
-
-    .pane {
-      border-color: rgba(15, 23, 42, 0.16);
-      background: #f8fafc;
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.82),
-        0 18px 46px rgba(15, 23, 42, 0.12);
-    }
-
-    .pane-head {
-      border-bottom-color: rgba(15, 23, 42, 0.14);
-      background: linear-gradient(180deg, #eef3f8, #e6edf5);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-    }
-
-    .pane-title {
-      color: #273244;
-    }
-
-    .pane-title svg {
-      color: #0f766e;
-    }
-
-    .icon-button {
-      color: #64748b;
-    }
-
-    .icon-button:hover,
-    .icon-button:focus-visible {
-      color: #0f172a;
-      background: #e2e8f0;
-      border-color: rgba(15, 23, 42, 0.18);
-    }
-
     .tool-toggle {
       color: #475569;
       background: rgba(255, 255, 255, 0.84);
@@ -750,91 +332,9 @@
       border-color: #0f766e;
     }
 
-    .editor-wrap,
-    .editor-shell,
-    .drop-wrap,
-    .preview-wrap,
-    .pane-body {
-      color-scheme: light;
-      background: #f8fafc;
-    }
-
-    textarea,
-    .output,
-    .code,
-    .signature-info {
-      color-scheme: light;
-      color: #172033;
-      background: #f8fafc;
-    }
-
-    textarea {
-      caret-color: #0f766e;
-    }
-
-    textarea::placeholder,
-    .placeholder {
-      color: #64748b;
-    }
-
-    .line-gutter,
-    .output-line-no {
-      color: #526174;
-      background: #eef2f6;
-      border-right-color: rgba(15, 23, 42, 0.12);
-    }
-
-    .json-key,
-    .cs-keyword {
-      color: #1d4ed8;
-    }
-
-    .json-string,
-    .cs-tag {
-      color: #15803d;
-    }
-
-    .json-number,
-    .cs-class-name {
-      color: #b45309;
-    }
-
-    .json-boolean {
-      color: #9333ea;
-    }
-
-    .json-null,
-    .cs-property {
-      color: #7c3aed;
-    }
-
-    .json-bracket,
-    .json-punctuation,
-    .json-count {
-      color: #334155;
-    }
-
-    .cs-type {
-      color: #0f766e;
-    }
-
-    .cs-comment {
-      color: #64748b;
-    }
-
-    .fold-toggle {
-      color: #475569;
-      background: #e2e8f0;
-    }
-
-    .error-box {
-      color: #be123c;
-      background: #fff1f2;
-      border-color: rgba(225, 29, 72, 0.26);
-    }
-
   </style>
   <script src="../theme.js"></script>
+  <script src="../tool-common.js"></script>
 </head>
 
 <body>
@@ -988,8 +488,6 @@
     const inputLines = document.querySelector("#inputLines");
     const output = document.querySelector("#output");
     const errorBox = document.querySelector("#errorBox");
-    const statusStrip = document.querySelector("#statusStrip");
-    const statusText = document.querySelector("#statusText");
     const typeMetric = document.querySelector("#typeMetric");
     const sizeMetric = document.querySelector("#sizeMetric");
     const lineMetric = document.querySelector("#lineMetric");
@@ -1066,15 +564,28 @@
     let parseTimer = 0;
     let sourceTimer = 0;
 
+    const ROW_OVERSCAN = 30;
+    const treeSpacer = document.createElement("div");
+    const rowsLayer = document.createElement("div");
+    treeSpacer.className = "json-spacer";
+    rowsLayer.className = "json-rows";
+    treeSpacer.append(rowsLayer);
+    let jsonRows = [];
+    let widestRowIndex = -1;
+    let widestRowUnits = -1;
+    let rowHeight = 0;
+    let treeLayoutDirty = false;
+    let renderedStart = -1;
+    let renderedEnd = -1;
+    let renderFrame = 0;
+
     input.addEventListener("input", () => {
-      updateInputLineNumbers();
+      renderLineNumbers(inputLines, input);
       window.clearTimeout(parseTimer);
       parseTimer = window.setTimeout(parseAndRender, 120);
     });
 
-    input.addEventListener("scroll", () => {
-      inputLines.scrollTop = input.scrollTop;
-    });
+    syncGutterScroll(inputLines, input);
 
     input.addEventListener("keydown", (event) => {
       if (event.key === "Tab") {
@@ -1082,53 +593,45 @@
         const start = input.selectionStart;
         const end = input.selectionEnd;
         input.setRangeText("  ", start, end, "end");
-        updateInputLineNumbers();
+        renderLineNumbers(inputLines, input);
         parseAndRender();
       }
     });
 
     sampleBtn.addEventListener("click", () => {
       input.value = sample;
+      input.setSelectionRange(0, 0);
       input.focus();
-      updateInputLineNumbers();
+      renderLineNumbers(inputLines, input);
       parseAndRender();
     });
 
     clearBtn.addEventListener("click", () => {
       input.value = "";
       input.focus();
-      updateInputLineNumbers();
+      renderLineNumbers(inputLines, input);
       renderEmpty();
     });
 
     pasteBtn.addEventListener("click", async () => {
-      if (!navigator.clipboard?.readText) {
-        setStatus("invalid", "当前浏览器不支持直接读取剪贴板");
+      const text = await readClipboardText();
+      if (text === null) {
         return;
       }
 
-      try {
-        input.value = await navigator.clipboard.readText();
-        input.focus();
-        updateInputLineNumbers();
-        parseAndRender();
-      } catch {
-        setStatus("invalid", "浏览器没有授权读取剪贴板");
-      }
+      input.value = text;
+      input.focus();
+      renderLineNumbers(inputLines, input);
+      parseAndRender();
     });
 
-    copyBtn.addEventListener("click", async () => {
+    copyBtn.addEventListener("click", () => {
       if (!formattedResult) {
         setStatus("invalid", "没有可复制的解析结果");
         return;
       }
 
-      try {
-        await navigator.clipboard.writeText(getResultText());
-        setStatus("valid", isSourceEdited() ? "已复制修改后的源码" : "已复制格式化后的 JSON");
-      } catch {
-        setStatus("invalid", "复制失败，请手动选择结果复制");
-      }
+      copyText(getResultText(), isSourceEdited() ? "已复制修改后的源码" : "已复制格式化后的 JSON");
     });
 
     downloadBtn.addEventListener("click", () => {
@@ -1137,13 +640,7 @@
         return;
       }
 
-      const blob = new Blob([getResultText()], { type: "application/json;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "formatted.json";
-      link.click();
-      URL.revokeObjectURL(url);
+      downloadFile(getResultText(), "formatted.json", "application/json;charset=utf-8");
     });
 
     sourceBtn.addEventListener("click", () => {
@@ -1151,12 +648,10 @@
       updateResultView();
     });
 
-    source.addEventListener("scroll", () => {
-      sourceLines.scrollTop = source.scrollTop;
-    });
+    syncGutterScroll(sourceLines, source);
 
     source.addEventListener("input", () => {
-      updateSourceLineNumbers();
+      renderLineNumbers(sourceLines, source);
       window.clearTimeout(sourceTimer);
       sourceTimer = window.setTimeout(checkSource, 120);
     });
@@ -1165,7 +660,7 @@
       if (event.key === "Tab") {
         event.preventDefault();
         source.setRangeText("  ", source.selectionStart, source.selectionEnd, "end");
-        updateSourceLineNumbers();
+        renderLineNumbers(sourceLines, source);
         checkSource();
       }
     });
@@ -1185,6 +680,17 @@
       drawJsonTree(currentJsonValue);
     });
 
+    output.addEventListener("scroll", () => {
+      if (!renderFrame) {
+        renderFrame = window.requestAnimationFrame(() => {
+          renderFrame = 0;
+          renderVisibleRows();
+        });
+      }
+    }, { passive: true });
+
+    new ResizeObserver(() => renderVisibleRows()).observe(output);
+
     function parseAndRender() {
       const raw = input.value.trim();
 
@@ -1199,6 +705,7 @@
         formattedResult = "";
         currentJsonValue = null;
         collapsedPaths.clear();
+        jsonRows = [];
         output.classList.add("hidden");
         updateResultView();
         errorBox.classList.remove("hidden");
@@ -1222,92 +729,163 @@
       lineMetric.textContent = `行数：${countLines(formattedResult)}`;
     }
 
+    // Flattens the tree into plain row objects; only the rows in view become DOM (see renderVisibleRows).
     function drawJsonTree(value) {
-      output.textContent = "";
+      jsonRows = [];
+      widestRowIndex = -1;
+      widestRowUnits = -1;
+      flattenJsonNode(value, 0, null, "[]", false);
       output.classList.remove("placeholder", "hidden");
-      let lineNumber = 1;
-
-      const appendLine = (depth, buildContent) => {
-        const line = document.createElement("div");
-        line.className = "json-line";
-
-        const number = document.createElement("span");
-        number.className = "output-line-no";
-        number.textContent = lineNumber;
-        lineNumber += 1;
-
-        const content = document.createElement("span");
-        content.className = "json-content";
-        content.style.setProperty("--depth", depth);
-
-        const indent = document.createElement("span");
-        indent.className = "json-indent";
-        content.append(indent);
-        buildContent(content);
-
-        line.append(number, content);
-        output.append(line);
-      };
-
-      renderJsonNode(value, 0, null, [], false, appendLine);
+      if (!treeSpacer.isConnected) {
+        output.replaceChildren(treeSpacer);
+      }
+      treeLayoutDirty = true;
+      renderVisibleRows(true);
     }
 
-    function renderJsonNode(value, depth, key, path, trailingComma, appendLine) {
-      const pathId = JSON.stringify(path);
-      const isArray = Array.isArray(value);
-      const isObject = value !== null && typeof value === "object";
+    function flattenJsonNode(value, depth, key, pathId, trailingComma) {
+      const keyUnits = key === null ? 0 : textUnits(key) + 4;
 
-      if (!isObject) {
-        appendLine(depth, (content) => {
-          appendKey(content, key);
-          appendPrimitive(content, value);
-          appendComma(content, trailingComma);
-        });
+      if (value === null || typeof value !== "object") {
+        const valueUnits = typeof value === "string" ? textUnits(value) + 2 : String(value).length;
+        pushRow({ kind: "value", depth, key, value, comma: trailingComma }, depth * 3 + keyUnits + valueUnits);
         return;
       }
 
-      const entries = isArray
-        ? value.map((item, index) => [String(index), item])
-        : Object.entries(value);
+      const isArray = Array.isArray(value);
+      const keys = isArray ? null : Object.keys(value);
+      const length = isArray ? value.length : keys.length;
       const open = isArray ? "[" : "{";
       const close = isArray ? "]" : "}";
 
-      if (entries.length === 0) {
-        appendLine(depth, (content) => {
-          appendKey(content, key);
-          appendToken(content, "json-bracket", `${open}${close}`);
-          appendComma(content, trailingComma);
-        });
+      if (length === 0) {
+        pushRow({ kind: "bracket", depth, key, text: `${open}${close}`, comma: trailingComma }, depth * 3 + keyUnits + 3);
         return;
       }
 
       if (collapsedPaths.has(pathId)) {
-        appendLine(depth, (content) => {
-          appendFoldButton(content, pathId, true);
-          appendKey(content, key);
-          appendToken(content, "json-bracket", `${open}...${close}`);
-          appendToken(content, "json-count", ` ${entries.length} 项`);
-          appendComma(content, trailingComma);
-        });
+        pushRow({ kind: "bracket", depth, key, pathId, text: `${open}...${close}`, count: length, comma: trailingComma },
+          depth * 3 + keyUnits + 16);
         return;
       }
 
-      appendLine(depth, (content) => {
-        appendFoldButton(content, pathId, false);
-        appendKey(content, key);
-        appendToken(content, "json-bracket", open);
-      });
+      pushRow({ kind: "bracket", depth, key, pathId, text: open }, depth * 3 + keyUnits + 4);
 
-      entries.forEach(([entryKey, entryValue], index) => {
-        const childPath = path.concat(entryKey);
-        const childKey = isArray ? null : entryKey;
-        renderJsonNode(entryValue, depth + 1, childKey, childPath, index < entries.length - 1, appendLine);
-      });
+      for (let index = 0; index < length; index += 1) {
+        const entryKey = isArray ? String(index) : keys[index];
+        const child = isArray ? value[index] : value[entryKey];
+        const childId = child !== null && typeof child === "object" ? childPathId(pathId, entryKey) : "";
+        flattenJsonNode(child, depth + 1, isArray ? null : entryKey, childId, index < length - 1);
+      }
 
-      appendLine(depth, (content) => {
-        appendToken(content, "json-bracket", close);
-        appendComma(content, trailingComma);
-      });
+      pushRow({ kind: "bracket", depth, key: null, text: close, comma: trailingComma }, 0);
+    }
+
+    function pushRow(row, units) {
+      if (units > widestRowUnits) {
+        widestRowUnits = units;
+        widestRowIndex = jsonRows.length;
+      }
+      jsonRows.push(row);
+    }
+
+    // Same string as JSON.stringify(path.concat(key)), built without copying the path array.
+    function childPathId(pathId, key) {
+      const encodedKey = JSON.stringify(key);
+      return pathId === "[]" ? `[${encodedKey}]` : `${pathId.slice(0, -1)},${encodedKey}]`;
+    }
+
+    // Rough monospace width: CJK and other wide characters take about two columns.
+    function textUnits(text) {
+      let units = text.length;
+      for (let index = 0; index < text.length; index += 1) {
+        if (text.charCodeAt(index) > 0x2e7f) {
+          units += 1;
+        }
+      }
+      return units;
+    }
+
+    function renderVisibleRows(force = false) {
+      if (!treeSpacer.isConnected || output.classList.contains("hidden")) {
+        return;
+      }
+
+      if (treeLayoutDirty) {
+        rowHeight = rowHeight || measureRow(createJsonLine({ kind: "bracket", depth: 0, key: null, text: "{" }, 1)).height;
+        if (!rowHeight) {
+          return;
+        }
+
+        // The widest row is picked by estimate, then measured for real so the horizontal scroll size is stable.
+        const widest = measureRow(createJsonLine(jsonRows[widestRowIndex], jsonRows.length)).width;
+        treeSpacer.style.height = `${jsonRows.length * rowHeight}px`;
+        treeSpacer.style.width = `${Math.ceil(widest)}px`;
+        treeLayoutDirty = false;
+        force = true;
+      }
+
+      // scrollTop can still be stale (larger than the new content) right after the rows change.
+      const maxTop = Math.max(0, jsonRows.length * rowHeight - output.clientHeight);
+      const top = Math.min(maxTop, Math.max(0, output.scrollTop - treeSpacer.offsetTop));
+      const first = Math.floor(top / rowHeight);
+      const start = Math.max(0, first - ROW_OVERSCAN);
+      const end = Math.min(jsonRows.length, first + Math.ceil(output.clientHeight / rowHeight) + ROW_OVERSCAN);
+      if (!force && start === renderedStart && end === renderedEnd) {
+        return;
+      }
+
+      renderedStart = start;
+      renderedEnd = end;
+      const fragment = document.createDocumentFragment();
+      for (let index = start; index < end; index += 1) {
+        fragment.append(createJsonLine(jsonRows[index], index + 1));
+      }
+      rowsLayer.style.transform = `translateY(${start * rowHeight}px)`;
+      rowsLayer.replaceChildren(fragment);
+    }
+
+    function measureRow(line) {
+      line.style.position = "absolute";
+      line.style.visibility = "hidden";
+      treeSpacer.append(line);
+      const rect = line.getBoundingClientRect();
+      line.remove();
+      return rect;
+    }
+
+    function createJsonLine(row, lineNumber) {
+      const line = document.createElement("div");
+      line.className = "json-line";
+
+      const number = document.createElement("span");
+      number.className = "output-line-no";
+      number.textContent = lineNumber;
+
+      const content = document.createElement("span");
+      content.className = "json-content";
+      content.style.setProperty("--depth", row.depth);
+
+      const indent = document.createElement("span");
+      indent.className = "json-indent";
+      content.append(indent);
+
+      if (row.pathId) {
+        appendFoldButton(content, row.pathId, Boolean(row.count));
+      }
+      appendKey(content, row.key);
+      if (row.kind === "value") {
+        appendPrimitive(content, row.value);
+      } else {
+        appendToken(content, "json-bracket", row.text);
+      }
+      if (row.count) {
+        appendToken(content, "json-count", ` ${row.count} 项`);
+      }
+      appendComma(content, row.comma);
+
+      line.append(number, content);
+      return line;
     }
 
     function appendFoldButton(parent, pathId, collapsed) {
@@ -1361,134 +939,11 @@
       parent.append(token);
     }
 
-    function parseJson(raw) {
-      const candidates = buildCandidates(raw);
-      let lastError = null;
-
-      for (const candidate of candidates) {
-        try {
-          const parsed = JSON.parse(candidate.text);
-          const normalized = unwrapJsonString(parsed, candidate.unescaped);
-          return { ok: true, value: normalized.value, unescaped: normalized.unescaped };
-        } catch (error) {
-          lastError = error;
-        }
-      }
-
-      return {
-        ok: false,
-        message: formatJsonError(lastError, raw)
-      };
-    }
-
-    function buildCandidates(raw) {
-      const text = raw.trim();
-      const candidates = [{ text, unescaped: false }];
-
-      if (isWrappedInQuotes(text)) {
-        try {
-          const unwrapped = JSON.parse(text);
-          if (typeof unwrapped === "string") {
-            candidates.push({ text: unwrapped.trim(), unescaped: true });
-          }
-        } catch {
-          // Keep the original parser error as the useful signal.
-        }
-      }
-
-      const quoteFixed = text.replace(/\\"/g, '"').replace(/\\\//g, "/");
-      if (quoteFixed !== text) {
-        candidates.push({ text: quoteFixed, unescaped: true });
-      }
-
-      const unicodeFixed = text.replace(/\\u([\dA-Fa-f]{4})/g, (_, code) => {
-        return String.fromCharCode(Number.parseInt(code, 16));
-      });
-      if (unicodeFixed !== text) {
-        candidates.push({ text: unicodeFixed, unescaped: true });
-      }
-
-      return dedupeCandidates(candidates);
-    }
-
-    function unwrapJsonString(value, wasUnescaped) {
-      let current = value;
-      let unescaped = wasUnescaped;
-
-      for (let i = 0; i < 4; i += 1) {
-        if (typeof current !== "string") {
-          break;
-        }
-
-        const text = current.trim();
-        if (!looksLikeJson(text)) {
-          break;
-        }
-
-        try {
-          current = JSON.parse(text);
-          unescaped = true;
-        } catch {
-          break;
-        }
-      }
-
-      return { value: current, unescaped };
-    }
-
-    function looksLikeJson(text) {
-      return (
-        (text.startsWith("{") && text.endsWith("}")) ||
-        (text.startsWith("[") && text.endsWith("]")) ||
-        isWrappedInQuotes(text)
-      );
-    }
-
-    function isWrappedInQuotes(text) {
-      return text.length >= 2 && text.startsWith('"') && text.endsWith('"');
-    }
-
-    function dedupeCandidates(candidates) {
-      const seen = new Set();
-      return candidates.filter((candidate) => {
-        if (seen.has(candidate.text)) {
-          return false;
-        }
-        seen.add(candidate.text);
-        return true;
-      });
-    }
-
-    function formatJsonError(error, source) {
-      const base = error?.message || "无法解析 JSON";
-      const position = extractErrorPosition(base);
-
-      if (position === null) {
-        return base;
-      }
-
-      const location = getLineColumn(source, position);
-      return `${base}\n位置：第 ${location.line} 行，第 ${location.column} 列`;
-    }
-
-    function extractErrorPosition(message) {
-      const match = message.match(/position\s+(\d+)/i);
-      return match ? Number(match[1]) : null;
-    }
-
-    function getLineColumn(text, position) {
-      const before = text.slice(0, position);
-      const lines = before.split(/\r\n|\r|\n/);
-      return {
-        line: lines.length,
-        column: lines[lines.length - 1].length + 1
-      };
-    }
-
     function renderEmpty() {
       formattedResult = "";
       currentJsonValue = null;
       collapsedPaths.clear();
+      jsonRows = [];
       output.textContent = "解析后的 JSON 会显示在这里。";
       output.classList.add("placeholder");
       output.classList.remove("hidden");
@@ -1518,7 +973,7 @@
         sourceBase = formattedResult;
         source.value = formattedResult;
         source.scrollTop = 0;
-        updateSourceLineNumbers();
+        renderLineNumbers(sourceLines, source);
       }
     }
 
@@ -1548,26 +1003,6 @@
       }
     }
 
-    function updateSourceLineNumbers() {
-      const lines = Math.max(1, countLines(source.value));
-      sourceLines.textContent = Array.from({ length: lines }, (_, index) => index + 1).join("\n");
-      sourceLines.scrollTop = source.scrollTop;
-    }
-
-    function updateInputLineNumbers() {
-      const lines = Math.max(1, countLines(input.value));
-      inputLines.textContent = Array.from({ length: lines }, (_, index) => index + 1).join("\n");
-      inputLines.scrollTop = input.scrollTop;
-    }
-
-    function setStatus(state, message) {
-      statusStrip.classList.remove("valid", "invalid");
-      if (state) {
-        statusStrip.classList.add(state);
-      }
-      statusText.textContent = message;
-    }
-
     function getJsonType(value) {
       if (Array.isArray(value)) {
         return "数组";
@@ -1585,23 +1020,7 @@
       return types[typeof value] || typeof value;
     }
 
-    function countLines(text) {
-      return text ? text.split(/\r\n|\r|\n/).length : 0;
-    }
-
-    function formatBytes(bytes) {
-      if (bytes < 1024) {
-        return `${bytes} B`;
-      }
-
-      if (bytes < 1024 * 1024) {
-        return `${(bytes / 1024).toFixed(1)} KB`;
-      }
-
-      return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
-    }
-
-    updateInputLineNumbers();
+    renderLineNumbers(inputLines, input);
     renderEmpty();
   </script>
 </body>

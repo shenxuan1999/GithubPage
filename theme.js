@@ -1,13 +1,22 @@
+// @ts-check
 (function () {
   "use strict";
 
+  /** @typedef {"light" | "dark"} Theme */
+
   const STORAGE_KEY = "githubpage-theme";
+  /** @type {Theme} */
   const LIGHT_THEME = "light";
+  /** @type {Theme} */
   const DARK_THEME = "dark";
   const root = document.documentElement;
-  const lightThemeStyles = document.getElementById("lightThemeStyles");
+  // Tool pages split the light theme into the shared tool-light.css plus their own <style>; the home page has one block.
+  const lightThemeStyles = /** @type {NodeListOf<HTMLLinkElement | HTMLStyleElement>} */ (
+    document.querySelectorAll("#lightThemeStyles, [data-light-theme]")
+  );
   let currentTheme = readTheme();
 
+  /** @returns {Theme} */
   function readTheme() {
     try {
       const storedTheme = localStorage.getItem(STORAGE_KEY);
@@ -33,14 +42,18 @@
     button.title = `切换到${nextThemeName}主题`;
   }
 
+  /**
+   * @param {string | null} theme
+   * @param {boolean} persist
+   */
   function applyTheme(theme, persist) {
     currentTheme = theme === DARK_THEME ? DARK_THEME : LIGHT_THEME;
     root.dataset.theme = currentTheme;
     root.style.colorScheme = currentTheme;
 
-    if (lightThemeStyles) {
-      lightThemeStyles.media = currentTheme === LIGHT_THEME ? "all" : "not all";
-    }
+    lightThemeStyles.forEach((styles) => {
+      styles.media = currentTheme === LIGHT_THEME ? "all" : "not all";
+    });
 
     if (persist) {
       try {
