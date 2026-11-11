@@ -216,6 +216,28 @@ function buildJsonCandidates(raw) {
     }
   }
 
+  // Decode complete string layers before repairing mixed escapes, preserving escaped values.
+  let escaped = text;
+  for (let i = 0; i < 4; i += 1) {
+    try {
+      const decoded = JSON.parse(`"${escaped}"`);
+      if (typeof decoded !== "string" || decoded === escaped) {
+        break;
+      }
+      escaped = decoded.trim();
+      candidates.push({ text: escaped, unescaped: true });
+    } catch {
+      break;
+    }
+  }
+
+  for (const candidate of [...candidates]) {
+    const repaired = repairJsonEscapes(candidate.text);
+    if (repaired !== candidate.text) {
+      candidates.push({ text: repaired, unescaped: true });
+    }
+  }
+
   const quoteFixed = text.replace(/\\"/g, '"').replace(/\\\//g, "/");
   if (quoteFixed !== text) {
     candidates.push({ text: quoteFixed, unescaped: true });
@@ -236,6 +258,54 @@ function buildJsonCandidates(raw) {
     seen.add(candidate.text);
     return true;
   });
+}
+
+/**
+ * Repairs mixed copy/paste escapes without decoding escapes inside JSON string values.
+ * @param {string} text
+ * @returns {string}
+ */
+function repairJsonEscapes(text) {
+  const parts = [];
+  let inString = false;
+  let quoteEscapes = 0;
+  let index = 0;
+
+  while (index < text.length) {
+    const char = text[index];
+    if (char === "\\") {
+      const start = index;
+      while (text[index] === "\\") {
+        index += 1;
+      }
+
+      const count = index - start;
+      const next = text[index];
+      if (next === '"' && (!inString || count === quoteEscapes)) {
+        quoteEscapes = inString ? 0 : count;
+        inString = !inString;
+        parts.push('"');
+      } else if (!inString && (next === "r" || next === "n" || next === "t")) {
+        parts.push(next === "r" ? "\r" : next === "n" ? "\n" : "\t");
+      } else if (inString && next === "~" && count % 2 === 1) {
+        // Remove only the unsupported escape; paired backslashes remain literal backslashes.
+        parts.push("\\".repeat(count - 1), "~");
+      } else {
+        parts.push(text.slice(start, index + 1));
+      }
+      index += 1;
+      continue;
+    }
+
+    if (char === '"' && (!inString || quoteEscapes === 0)) {
+      inString = !inString;
+      quoteEscapes = 0;
+    }
+    parts.push(char);
+    index += 1;
+  }
+
+  return parts.join("");
 }
 
 /**
